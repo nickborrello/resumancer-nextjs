@@ -88,16 +88,12 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
       // Skip if we already have initialData
       if (initialData) return;
 
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_API_URL'];
-      if (!backendUrl) return;
-
       try {
-        const response = await fetch(`${backendUrl}/api/resumes/${resumeId}`, {
+        const response = await fetch(`/api/resumes/${resumeId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include', // Important: include auth cookies
         });
 
         if (response.ok) {
@@ -131,26 +127,18 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     setIsSaving(true);
     try {
       // Save to backend first (primary storage)
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_API_URL'];
-      if (backendUrl) {
-        try {
-          const response = await fetch(`${backendUrl}/api/resumes/${resumeId}`, {
-            method: 'PUT',
-            headers: { 
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include', // Important: include auth cookies
-            body: JSON.stringify(data),
-          });
+      const response = await fetch(`/api/resumes/${resumeId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-          if (response.ok) {
-            console.log('✅ Resume saved to backend');
-          } else {
-            console.warn('⚠️ Backend save failed, using localStorage fallback');
-          }
-        } catch (backendError) {
-          console.warn('⚠️ Backend connection failed, using localStorage fallback:', backendError);
-        }
+      if (response.ok) {
+        console.log('✅ Resume saved to backend');
+      } else {
+        console.warn('⚠️ Backend save failed, using localStorage fallback');
       }
 
       // Always save to localStorage as backup/offline support

@@ -4,6 +4,7 @@ import GitHub from "next-auth/providers/github"
 import type { Provider } from "next-auth/providers"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "./database/db"
+import { eq } from "drizzle-orm"
 import * as schema from "./database/schema"
 
 /**
@@ -59,52 +60,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     /**
-     * Sign-In Callback - User Migration Logic
-     * 
-     * Links OAuth users to existing backend users by email.
-     * Creates new backend user if none exists.
-     * 
-     * This ensures data preservation for existing users migrating from
-     * the Vite app's JWT authentication to NextAuth.js OAuth.
-     */
-    async signIn({ user, account }) {
-      try {
-        // Only link on first sign-in (account exists means OAuth flow)
-        if (!account) return true
-
-        const BACKEND_API_URL = process.env.BACKEND_API_URL || "http://localhost:3000"
-
-        // Call backend to link/create user
-        const response = await fetch(`${BACKEND_API_URL}/api/auth/link-oauth-user`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-          }),
-        })
-
-        if (!response.ok) {
-          console.error("Failed to link OAuth user to backend:", await response.text())
-          // Allow sign-in to continue even if backend linking fails
-          // User can still authenticate, but backend data may not be available
-          return true
-        }
-
-        const data = await response.json()
-        console.log("User linked to backend:", data)
-        return true
-      } catch (error) {
-        console.error("Error in signIn callback:", error)
-        // Allow sign-in to continue despite errors
-        return true
-      }
-    },
-
-    /**
      * Session Callback - Enhance Session with Backend Data
      * 
      * Fetches user data from backend (credits, subscription, etc.)
@@ -112,24 +67,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
      */
     async session({ session, user }) {
       try {
-        const BACKEND_API_URL = process.env.BACKEND_API_URL || "http://localhost:3000"
+        // Query user data from local database
+        const dbUser = await db
+          .select({
+            credits: schema.users.credits,
+            subscriptionTier: schema.users.subscription_tier,
+          })
+          .from(schema.users)
+          .where(eq(schema.users.id, user.id))
+          .limit(1)
 
-        // Fetch backend user data by email
-        const response = await fetch(`${BACKEND_API_URL}/api/users/by-email/${user.email}`)
-        
-        if (response.ok) {
-          const backendUser = await response.json()
-          
-          // Enhance session with backend data
-          session.user.id = user.id // NextAuth user ID
-          session.user.backendId = backendUser.id // Backend user ID
-          session.user.credits = backendUser.credits
-          session.user.subscriptionTier = backendUser.subscription_tier
-          session.user.emailVerified = backendUser.email_verified
-        } else {
-          // Backend user not found, include minimal session data
+        if (dbUser.length > 0) {
+          const userData = dbUser[0]!
+          // Enhance session with database data
           session.user.id = user.id
-          session.user.backendId = null
+          session.user.credits = userData.credits ?? 0
+          session.user.subscriptionTier = userData.subscriptionTier ?? "free"
+        } else {
+          // User not found in database, log error and set defaults
+          console.error(`User with id ${user.id} not found in database`)
+          session.user.id = user.id
           session.user.credits = 0
           session.user.subscriptionTier = "free"
         }
@@ -137,7 +94,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return session
       } catch (error) {
         console.error("Error enhancing session:", error)
-        // Return basic session if backend fetch fails
+        // Return basic session if database query fails
         session.user.id = user.id
         return session
       }

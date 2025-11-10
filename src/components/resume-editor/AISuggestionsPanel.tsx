@@ -31,17 +31,11 @@ export function AISuggestionsPanel({ resumeData, onApplySuggestion, className }:
     setError(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_API_URL'];
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
-
-      const response = await fetch(`${backendUrl}/api/resumes/ai-suggestions`, {
+      const response = await fetch('/api/resumes/ai-suggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ resumeData }),
       });
 

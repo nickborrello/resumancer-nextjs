@@ -14,4 +14,5 @@ import { handlers } from "@/auth"
  * 
  * The handlers are exported from the centralized auth.ts configuration.
  */
+export const runtime = 'nodejs'
 export const { GET, POST } = handlers

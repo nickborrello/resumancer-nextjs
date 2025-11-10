@@ -1,0 +1,102 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [active]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - navigation [ref=e7]:
+            - button "previous" [disabled] [ref=e8]:
+              - img "previous" [ref=e9]
+            - generic [ref=e11]:
+              - generic [ref=e12]: 1/
+              - text: "3"
+            - button "next" [ref=e13] [cursor=pointer]:
+              - img "next" [ref=e14]
+          - img
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - generic "Latest available version is detected (16.0.1)." [ref=e20]: Next.js 16.0.1
+            - generic [ref=e21]: Turbopack
+          - img
+      - generic [ref=e22]:
+        - dialog "Console Error" [ref=e23]:
+          - generic [ref=e26]:
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - generic [ref=e30]: Console Error
+                - generic [ref=e31]:
+                  - button "Copy Error Info" [ref=e32] [cursor=pointer]:
+                    - img [ref=e33]
+                  - button "No related documentation found" [disabled] [ref=e35]:
+                    - img [ref=e36]
+                  - link "Learn more about enabling Node.js inspector for server code with Chrome DevTools" [ref=e38] [cursor=pointer]:
+                    - /url: https://nextjs.org/docs/app/building-your-application/configuring/debugging#server-side-code
+                    - img [ref=e39]
+              - generic [ref=e48]: "React does not recognize the `activeTab` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `activetab` instead. If you accidentally passed it from a parent component, remove it from the DOM element."
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - paragraph [ref=e52]:
+                  - img [ref=e54]
+                  - generic [ref=e57]: src/components/resume-editor/ResumeEditorClient.tsx (249:19) @ ResumeEditorClient
+                  - button "Open in editor" [ref=e58] [cursor=pointer]:
+                    - img [ref=e60]
+                - generic [ref=e63]:
+                  - generic [ref=e64]: 247 | <Card className="bg-slate-900/50 border-purple-500/30">
+                  - generic [ref=e65]: "248 | <Tabs value={activeTab} onValueChange={setActiveTab}>"
+                  - generic [ref=e66]: "> 249 | <div className=\"border-b border-slate-700 px-6\">"
+                  - generic [ref=e67]: "| ^"
+                  - generic [ref=e68]: 250 | <TabsList className="bg-transparent">
+                  - generic [ref=e69]: 251 | <TabsTrigger value="personal" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300"><FileText className="h-4 w-4 mr-2" />Personal</TabsTrigger>
+                  - generic [ref=e70]: 252 | <TabsTrigger value="summary" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Summary</TabsTrigger>
+              - generic [ref=e71]:
+                - generic [ref=e72]:
+                  - paragraph [ref=e73]:
+                    - text: Call Stack
+                    - generic [ref=e74]: "19"
+                  - button "Show 16 ignore-listed frame(s)" [ref=e75] [cursor=pointer]:
+                    - text: Show 16 ignore-listed frame(s)
+                    - img [ref=e76]
+                - generic [ref=e78]:
+                  - generic [ref=e79]: div
+                  - text: <anonymous>
+                - generic [ref=e80]:
+                  - generic [ref=e81]:
+                    - text: ResumeEditorClient
+                    - button "Open ResumeEditorClient in editor" [ref=e82] [cursor=pointer]:
+                      - img [ref=e83]
+                  - text: src/components/resume-editor/ResumeEditorClient.tsx (249:19)
+                - generic [ref=e85]:
+                  - generic [ref=e86]:
+                    - text: ResumeEditorPage
+                    - button "Open ResumeEditorPage in editor" [ref=e87] [cursor=pointer]:
+                      - img [ref=e88]
+                  - text: src\app\resume\editor\[resumeId]\page.tsx (16:7)
+          - generic [ref=e90]: "1"
+          - generic [ref=e91]: "2"
+        - contentinfo [ref=e92]:
+          - region "Error feedback" [ref=e93]:
+            - paragraph [ref=e94]:
+              - link "Was this helpful?" [ref=e95] [cursor=pointer]:
+                - /url: https://nextjs.org/telemetry#error-feedback
+            - button "Mark as helpful" [ref=e96] [cursor=pointer]:
+              - img [ref=e97]
+            - button "Mark as not helpful" [ref=e100] [cursor=pointer]:
+              - img [ref=e101]
+    - generic [ref=e107] [cursor=pointer]:
+      - button "Open Next.js Dev Tools" [ref=e108]:
+        - img [ref=e109]
+      - generic [ref=e112]:
+        - button "Open issues overlay" [ref=e113]:
+          - generic [ref=e114]:
+            - generic [ref=e115]: "2"
+            - generic [ref=e116]: "3"
+          - generic [ref=e117]:
+            - text: Issue
+            - generic [ref=e118]: s
+        - button "Collapse issues badge" [ref=e119]:
+          - img [ref=e120]
+  - 'heading "Application error: a client-side exception has occurred while loading localhost (see the browser console for more information)." [level=2] [ref=e124]'
+```

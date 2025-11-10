@@ -1,9 +1,6 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      /** Backend API server URL */
-      BACKEND_API_URL: string;
-
       /** PostgreSQL database connection string */
       DATABASE_URL: string;
 

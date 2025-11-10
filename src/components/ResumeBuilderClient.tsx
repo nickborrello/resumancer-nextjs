@@ -15,7 +15,7 @@ export default function ResumeBuilderClient({ credits }: ResumeBuilderClientProp
   const [jobDescription, setJobDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<'ai' | 'demo' | 'credit-error' | ''>('');
+  const [mode, setMode] = useState<'ai' | 'credit-error' | ''>('');
   const [message, setMessage] = useState('');
 
   // Character count and limits
@@ -76,43 +76,6 @@ export default function ResumeBuilderClient({ credits }: ResumeBuilderClientProp
     }
   };
 
-  // Generate demo resume (free)
-  const generateDemoResume = async () => {
-    setIsGenerating(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/resumes/generate-demo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jobDescription: jobDescription || 'Demo job description - software engineering position'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate demo resume');
-      }
-
-      const data = await response.json();
-      
-      setMode('demo');
-      setMessage(data.message || 'Demo resume generated successfully!');
-
-      // Navigate to editor page after brief delay
-      setTimeout(() => {
-        router.push(`/resume/editor/${data.resumeId}`);
-      }, 1500);
-    } catch (err) {
-      setError('Failed to generate demo resume. Please try again.');
-      console.error('Demo resume generation error:', err);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto">
       {/* Page Header */}
@@ -159,7 +122,7 @@ export default function ResumeBuilderClient({ credits }: ResumeBuilderClientProp
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-amethyst-600/30 border-t-amethyst-600 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-amethyst-300 text-xl animate-pulse">
-              Generating {mode === 'demo' ? 'Demo' : 'AI'} Resume...
+              Generating AI Resume...
             </p>
           </div>
         </div>
@@ -292,29 +255,6 @@ Requirements:
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   Generate AI Resume
-                </>
-              )}
-            </Button>
-            <Button
-              onClick={generateDemoResume}
-              disabled={isGenerating}
-              variant="secondary"
-              className="flex-1 border-amethyst-500/30 hover:bg-amethyst-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGenerating ? (
-                <>
-                  <svg className="animate-spin w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Generating Resume...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Try Demo (Free)
                 </>
               )}
             </Button>

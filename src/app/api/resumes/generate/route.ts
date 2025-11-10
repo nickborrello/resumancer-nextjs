@@ -1,146 +1,141 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import type { GenerateResumeRequest, GenerateResumeResponse, ResumeData } from '@/types/resume';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/auth'
+import { db } from '@/database/db'
+import { eq } from 'drizzle-orm'
+import { resumes, users, creditTransactions, profiles } from '@/database/schema'
+import OpenAI from 'openai'
+
+export const runtime = 'nodejs'
+
+const openai = new OpenAI({
+  apiKey: process.env['OPENAI_API_KEY'],
+})
 
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await auth();
+    const session = await auth()
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
-      );
-    }
-
-    // Check credits
-    const credits = session.user.credits ?? 0;
-    if (credits < 1) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', message: 'You need at least 1 credit to generate a resume.' },
-        { status: 402 }
-      );
+      )
     }
 
     // Parse request body
-    const body: GenerateResumeRequest = await request.json();
-    const { jobDescription } = body;
+    const body = await request.json()
+    const { jobDescription } = body
 
     if (!jobDescription?.trim()) {
       return NextResponse.json(
         { error: 'Job description is required' },
         { status: 400 }
-      );
+      )
     }
 
-    // TODO: Call OpenAI API to generate resume based on job description
-    // For now, return mock data
-    const mockResumeData: ResumeData = {
-      personalInfo: {
-        fullName: session.user.name || 'John Doe',
-        email: session.user.email || 'john@example.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        linkedin: 'linkedin.com/in/johndoe',
-        github: 'github.com/johndoe',
-        portfolio: 'johndoe.com',
-      },
-      professionalSummary: 'Experienced software engineer with 5+ years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of building scalable applications and leading development teams.',
-      experiences: [
-        {
-          id: '1',
-          company: 'Tech Corp',
-          position: 'Senior Software Engineer',
-          startDate: '2021-01',
-          endDate: '2024-12',
-          current: true,
-          location: 'San Francisco, CA',
-          description: [
-            'Led development of microservices architecture serving 1M+ users',
-            'Improved application performance by 40% through optimization',
-            'Mentored team of 5 junior developers',
-          ],
-        },
-        {
-          id: '2',
-          company: 'StartupXYZ',
-          position: 'Full Stack Developer',
-          startDate: '2019-06',
-          endDate: '2021-01',
-          current: false,
-          location: 'Remote',
-          description: [
-            'Built RESTful APIs using Node.js and Express',
-            'Developed responsive UIs with React and TypeScript',
-            'Implemented CI/CD pipelines using GitHub Actions',
-          ],
-        },
-      ],
-      education: [
-        {
-          id: '1',
-          institution: 'University of California',
-          degree: 'Bachelor of Science',
-          field: 'Computer Science',
-          startDate: '2015-09',
-          endDate: '2019-05',
-          gpa: '3.8',
-          description: 'Focus on Software Engineering and Algorithms',
-        },
-      ],
-      projects: [
-        {
-          id: '1',
-          name: 'E-commerce Platform',
-          description: 'Built a full-stack e-commerce platform with React, Node.js, and PostgreSQL',
-          technologies: ['React', 'Node.js', 'PostgreSQL', 'Stripe'],
-          link: 'github.com/johndoe/ecommerce',
-        },
-        {
-          id: '2',
-          name: 'Task Management App',
-          description: 'Developed a collaborative task management application with real-time updates',
-          technologies: ['Next.js', 'Socket.io', 'MongoDB'],
-          link: 'github.com/johndoe/taskapp',
-        },
-      ],
-      skills: [
-        {
-          category: 'Languages',
-          skills: ['JavaScript', 'TypeScript', 'Python', 'SQL'],
-        },
-        {
-          category: 'Frontend',
-          skills: ['React', 'Next.js', 'Vue.js', 'Tailwind CSS'],
-        },
-        {
-          category: 'Backend',
-          skills: ['Node.js', 'Express', 'PostgreSQL', 'MongoDB'],
-        },
-        {
-          category: 'Tools',
-          skills: ['Git', 'Docker', 'AWS', 'CI/CD'],
-        },
-      ],
-    };
+    // Check user credits
+    const user = await db
+      .select({ credits: users.credits })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1)
 
-    // TODO: Save to database and deduct credit
-    // For now, generate a mock resume ID
-    const resumeId = `resume_${Date.now()}`;
+    if (!user.length || (user[0]?.credits ?? 0) <= 0) {
+      return NextResponse.json(
+        { error: 'Insufficient credits' },
+        { status: 402 }
+      )
+    }
 
-    const response: GenerateResumeResponse = {
-      resumeId,
-      resume: mockResumeData,
-      message: 'Resume generated successfully!',
-      creditsRemaining: credits - 1,
-    };
+    // Fetch user profile
+    const profile = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, session.user.id))
+      .limit(1)
 
-    return NextResponse.json(response, { status: 200 });
+    // Construct OpenAI prompt
+    const profileData = profile.length > 0 ? profile[0] : {}
+    const prompt = `
+Generate a professional resume in JSON format based on the following:
+
+Job Description:
+${jobDescription}
+
+User Profile:
+${JSON.stringify(profileData, null, 2)}
+
+Please create a comprehensive resume that matches the job description. Return only valid JSON with the following structure:
+{
+  "personalInfo": {...},
+  "professionalSummary": "...",
+  "education": [...],
+  "experiences": [...],
+  "projects": [...],
+  "skills": [...]
+}
+`
+
+    // Call OpenAI
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    })
+
+    const generatedContent = completion.choices[0]?.message?.content
+    if (!generatedContent) {
+      throw new Error('Failed to generate resume content')
+    }
+
+    let resumeData
+    try {
+      resumeData = JSON.parse(generatedContent)
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError)
+      throw new Error('Invalid response format from AI service')
+    }
+
+    // Perform atomic transaction
+    const result = await db.transaction(async (tx) => {
+      // Create the resume
+      const newResume = await tx
+        .insert(resumes)
+        .values({
+          userId: session.user.id,
+          profileId: profile.length > 0 ? profile[0]!.id : null,
+          title: `Resume for ${jobDescription.slice(0, 50)}...`,
+          jobDescription,
+          resumeData,
+        })
+        .returning()
+
+      // Decrement user credits
+      await tx
+        .update(users)
+        .set({ credits: (user[0]?.credits ?? 0) - 1 })
+        .where(eq(users.id, session.user.id))
+
+      // Log credit transaction
+      await tx
+        .insert(creditTransactions)
+        .values({
+          userId: session.user.id,
+          type: 'generation',
+          amount: 1,
+          description: 'AI Resume Generation',
+          resumeId: newResume[0]!.id,
+        })
+
+      return newResume[0]
+    })
+
+    return NextResponse.json(result)
   } catch (error) {
-    console.error('Error generating resume:', error);
+    console.error('Error in resume generation:', error)
     return NextResponse.json(
       { error: 'Failed to generate resume' },
       { status: 500 }
-    );
+    )
   }
 }

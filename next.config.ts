@@ -18,15 +18,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        // Proxy all /api/* routes to backend EXCEPT /api/auth/* (handled by NextAuth)
-        source: "/api/:path((?!auth).*)*",
-        destination: `${process.env.BACKEND_API_URL}/api/:path*`,
-      },
-    ];
-  },
 };
 
 export default withSentryConfig(nextConfig, {

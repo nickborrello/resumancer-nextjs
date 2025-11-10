@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -22,38 +22,30 @@ interface CreditsClientProps {
 
 export function CreditsClient({ credits, subscriptionTier }: CreditsClientProps) {
   const [loadingPackage, setLoadingPackage] = useState<string | null>(null);
+  const [packages, setPackages] = useState<CreditPackage[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+  const [packagesError, setPackagesError] = useState<string | null>(null);
 
-  // Credit packages with Stripe Price IDs
-  // Note: In production, these would be actual Stripe Price IDs from your Stripe Dashboard
-  const packages: CreditPackage[] = [
-    {
-      id: 'basic',
-      name: 'Basic Pack',
-      credits: 5,
-      price: 9.99,
-      description: 'Perfect for occasional resume updates',
-      popular: false,
-      stripePriceId: 'price_basic_5_credits', // Replace with actual Stripe Price ID
-    },
-    {
-      id: 'pro',
-      name: 'Pro Pack',
-      credits: 15,
-      price: 24.99,
-      description: 'Best value for job seekers',
-      popular: true,
-      stripePriceId: 'price_pro_15_credits', // Replace with actual Stripe Price ID
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise Pack',
-      credits: 50,
-      price: 79.99,
-      description: 'For career coaches and recruiters',
-      popular: false,
-      stripePriceId: 'price_enterprise_50_credits', // Replace with actual Stripe Price ID
-    },
-  ];
+  // Fetch credit packages on component mount
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await fetch('/api/credits/packages');
+        if (!response.ok) {
+          throw new Error('Failed to fetch credit packages');
+        }
+        const data = await response.json();
+        setPackages(data.packages || []);
+      } catch (error) {
+        console.error('Error fetching credit packages:', error);
+        setPackagesError('Failed to load credit packages. Please refresh the page.');
+      } finally {
+        setLoadingPackages(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
 
   const handlePurchase = async (pkg: CreditPackage) => {
     setLoadingPackage(pkg.id);
@@ -116,65 +108,100 @@ export function CreditsClient({ credits, subscriptionTier }: CreditsClientProps)
       {/* Credit Packages */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">Purchase Credits</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {packages.map((pkg) => (
-            <Card
-              key={pkg.id}
-              className={`p-6 space-y-6 relative ${
-                pkg.popular
-                  ? 'border-amethyst-500 shadow-lg shadow-amethyst-500/20'
-                  : ''
-              }`}
+        
+        {loadingPackages ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-amethyst-400" />
+            <span className="ml-3 text-muted-foreground">Loading credit packages...</span>
+          </div>
+        ) : packagesError ? (
+          <Card className="p-6 text-center">
+            <div className="text-red-400 mb-4">
+              <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <h3 className="text-lg font-semibold mb-2">Error Loading Packages</h3>
+              <p className="text-sm">{packagesError}</p>
+            </div>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="border-amethyst-500/30 hover:bg-amethyst-500/10"
             >
-              {pkg.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-amethyst-500 to-amethyst-600 rounded-full text-xs font-bold text-white">
-                  MOST POPULAR
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold">{pkg.name}</h3>
-                <p className="text-sm text-muted-foreground">{pkg.description}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-4xl font-bold text-amethyst-400">
-                  {pkg.credits}
-                </div>
-                <div className="text-sm text-muted-foreground">Credits</div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-3xl font-bold">
-                  ${pkg.price}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  ${(pkg.price / pkg.credits).toFixed(2)} per credit
-                </div>
-              </div>
-
-              <Button
-                className={`w-full ${
+              Try Again
+            </Button>
+          </Card>
+        ) : packages.length === 0 ? (
+          <Card className="p-6 text-center">
+            <div className="text-muted-foreground">
+              <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="text-lg font-semibold mb-2">No Credit Packages Available</h3>
+              <p className="text-sm">Please check back later or contact support.</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {packages.map((pkg) => (
+              <Card
+                key={pkg.id}
+                className={`p-6 space-y-6 relative ${
                   pkg.popular
-                    ? 'bg-gradient-to-r from-amethyst-500 to-amethyst-600 hover:from-amethyst-600 hover:to-amethyst-700'
+                    ? 'border-amethyst-500 shadow-lg shadow-amethyst-500/20'
                     : ''
                 }`}
-                variant={pkg.popular ? 'default' : 'outline'}
-                onClick={() => handlePurchase(pkg)}
-                disabled={loadingPackage === pkg.id}
               >
-                {loadingPackage === pkg.id ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Purchase'
+                {pkg.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-amethyst-500 to-amethyst-600 rounded-full text-xs font-bold text-white">
+                    MOST POPULAR
+                  </div>
                 )}
-              </Button>
-            </Card>
-          ))}
-        </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold">{pkg.name}</h3>
+                  <p className="text-sm text-muted-foreground">{pkg.description}</p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-4xl font-bold text-amethyst-400">
+                    {pkg.credits}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Credits</div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-3xl font-bold">
+                    ${pkg.price}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    ${(pkg.price / pkg.credits).toFixed(2)} per credit
+                  </div>
+                </div>
+
+                <Button
+                  className={`w-full ${
+                    pkg.popular
+                      ? 'bg-gradient-to-r from-amethyst-500 to-amethyst-600 hover:from-amethyst-600 hover:to-amethyst-700'
+                      : ''
+                  }`}
+                  variant={pkg.popular ? 'default' : 'outline'}
+                  onClick={() => handlePurchase(pkg)}
+                  disabled={loadingPackage === pkg.id}
+                >
+                  {loadingPackage === pkg.id ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Purchase'
+                  )}
+                </Button>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* How Credits Work */}

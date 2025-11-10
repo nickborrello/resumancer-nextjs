@@ -1,41 +1,23 @@
 /**
  * Database Client Configuration for Drizzle ORM
  * 
- * Configures PostgreSQL connection for NextAuth.js session storage.
- * Uses connection pooling via the `postgres` library.
+ * Configures SQLite connection for NextAuth.js session storage.
+ * Uses better-sqlite3 for local development.
  * 
  * Environment Variables Required:
- * - DATABASE_URL: PostgreSQL connection string
- *   Format: postgresql://username:password@host:port/database
- *   Example: postgresql://user:pass@localhost:5432/resumancer
+ * - DATABASE_URL: SQLite file path (optional, defaults to ./dev.db)
  */
 
-import { drizzle } from "drizzle-orm/postgres-js"
-import postgres from "postgres"
+import Database from "better-sqlite3"
+import { drizzle } from "drizzle-orm/better-sqlite3"
 import * as schema from "./schema"
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL environment variable is not set. " +
-    "Please add it to your .env.local file."
-  )
-}
-
-/**
- * PostgreSQL Connection Client
- * 
- * Configuration:
- * - max: 1 connection (Next.js serverless functions use short-lived connections)
- * - Connection pooling handled by Vercel/Railway in production
- */
-const client = postgres(process.env.DATABASE_URL, {
-  max: 1, // Serverless-friendly: single connection per function invocation
-})
+const sqlite = new Database(process.env.DATABASE_URL || "./dev.db")
 
 /**
  * Drizzle ORM Database Instance
  * 
- * Exports a configured Drizzle instance with the NextAuth schema.
+ * Exports a configured Drizzle instance with the schema.
  * Use this `db` object for all database operations.
  */
-export const db = drizzle(client, { schema })
+export const db = drizzle(sqlite, { schema })
