@@ -30,7 +30,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const [activeTab, setActiveTab] = useState('personal');
   const [showPreview, setShowPreview] = useState(false);
 
-  // Load from localStorage on mount
+  // Load resume data from backend or localStorage
   const getDefaultValues = () => {
     if (initialData) {
       return {
@@ -43,7 +43,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
       };
     }
 
-    // Try to load from localStorage
+    // Try to load from localStorage as fallback
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(`resume-draft-${resumeId}`);
       if (saved) {
@@ -76,6 +76,45 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const watchedData = methods.watch();
   const debouncedData = useDebounce(watchedData, 1500);
 
+  // Load resume from backend on mount
+  useEffect(() => {
+    const loadResumeFromBackend = async () => {
+      // Skip if we already have initialData
+      if (initialData) return;
+
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_API_URL'];
+      if (!backendUrl) return;
+
+      try {
+        const response = await fetch(`${backendUrl}/api/resumes/${resumeId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Important: include auth cookies
+        });
+
+        if (response.ok) {
+          const resumeData = await response.json();
+          methods.reset({
+            personalInfo: resumeData.personalInfo,
+            professionalSummary: resumeData.professionalSummary,
+            education: resumeData.education,
+            experiences: resumeData.experiences,
+            projects: resumeData.projects,
+            skills: resumeData.skills,
+          });
+          setLastSaved(new Date(resumeData.updatedAt || resumeData.createdAt));
+          console.log('✅ Resume loaded from backend');
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to load from backend, using localStorage:', error);
+      }
+    };
+
+    loadResumeFromBackend();
+  }, [resumeId, initialData, methods]);
+
   useEffect(() => {
     if (debouncedData) {
       saveResume(debouncedData);
@@ -85,18 +124,34 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const saveResume = async (data: ResumeFormData) => {
     setIsSaving(true);
     try {
-      // Save to localStorage
+      // Save to backend first (primary storage)
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_API_URL'];
+      if (backendUrl) {
+        try {
+          const response = await fetch(`${backendUrl}/api/resumes/${resumeId}`, {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Important: include auth cookies
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            console.log('✅ Resume saved to backend');
+          } else {
+            console.warn('⚠️ Backend save failed, using localStorage fallback');
+          }
+        } catch (backendError) {
+          console.warn('⚠️ Backend connection failed, using localStorage fallback:', backendError);
+        }
+      }
+
+      // Always save to localStorage as backup/offline support
       localStorage.setItem(`resume-draft-${resumeId}`, JSON.stringify({
         data,
         savedAt: new Date().toISOString(),
       }));
-
-      // In production, also save to backend
-      // await fetch(`/api/resumes/${resumeId}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data),
-      // });
 
       setLastSaved(new Date());
     } catch (error) {
