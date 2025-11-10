@@ -9,10 +9,11 @@ import { ExperienceSection } from './ExperienceSection';
 import { ProjectsSection } from './ProjectsSection';
 import { SkillsSection } from './SkillsSection';
 import { ProfessionalSummarySection } from './ProfessionalSummarySection';
+import { AISuggestionsPanel } from './AISuggestionsPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Download, Eye, FileText } from 'lucide-react';
+import { Save, Download, Eye, FileText, Sparkles } from 'lucide-react';
 import { ResumePreview } from '@/components/resume-preview/ResumePreview';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -33,6 +34,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const [activeTab, setActiveTab] = useState('personal');
   const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
 
   // Load resume data from backend or localStorage
   const getDefaultValues = () => {
@@ -192,6 +194,15 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     }
   };
 
+  const handleApplySuggestion = (suggestion: any) => {
+    // This is a simplified implementation
+    // In a full implementation, you would parse the suggestion and update the specific field
+    console.log('✅ Applying suggestion:', suggestion);
+    
+    // For now, just show an alert - you would implement the actual field update logic here
+    alert(`Suggestion applied! You may need to manually update the ${suggestion.section} section with: ${suggestion.suggested}`);
+  };
+
   const onSubmit = async (data: ResumeFormData) => {
     await saveResume(data);
   };
@@ -209,6 +220,15 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
             </p>
           </div>
           <div className="flex gap-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setShowAISuggestions(!showAISuggestions)}
+              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {showAISuggestions ? 'Hide' : 'Show'} AI Suggestions
+            </Button>
             <Button 
               type="button" 
               variant="outline" 
@@ -230,7 +250,11 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
           </div>
         </div>
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className={`grid gap-6 ${
+            showPreview && showAISuggestions ? 'grid-cols-1 lg:grid-cols-3' : 
+            (showPreview || showAISuggestions) ? 'grid-cols-1 lg:grid-cols-2' : 
+            'grid-cols-1'
+          }`}>
             <div className="space-y-6">
               <Card className="bg-slate-900/50 border-purple-500/30">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -267,6 +291,17 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
                       <ResumePreview />
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+            {showAISuggestions && (
+              <div>
+                <div className="sticky top-8">
+                  <AISuggestionsPanel
+                    resumeData={methods.watch()}
+                    onApplySuggestion={handleApplySuggestion}
+                    className="max-h-[calc(100vh-8rem)] overflow-y-auto"
+                  />
                 </div>
               </div>
             )}
