@@ -17,7 +17,7 @@ export default async function DashboardPage() {
       <div className="container mx-auto p-6 pt-24 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
           <p className="text-muted-foreground">Welcome back, {session.user.name || session.user.email}</p>
         </div>
         <form action="/api/auth/signout" method="POST">

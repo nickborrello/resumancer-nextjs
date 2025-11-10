@@ -1,6 +1,20 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@theme {
+  --color-amethyst-50: #f6f3ff;
+  --color-amethyst-100: #efe9fe;
+  --color-amethyst-200: #e1d7fd;
+  --color-amethyst-300: #cdb6fc;
+  --color-amethyst-400: #b48df8;
+  --color-amethyst-500: #9450f2;
+  --color-amethyst-600: #913dea;
+  --color-amethyst-700: #822bd6;
+  --color-amethyst-800: #6c24b3;
+  --color-amethyst-900: #591f93;
+  --color-amethyst-950: #371263;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -77,6 +91,12 @@
   }
   body {
     background-color: var(--background);
+    color: var(--foreground);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--foreground);
+  }
+  p {
     color: var(--foreground);
   }
 }

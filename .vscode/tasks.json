@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Create Sentry client config",
+			"type": "shell",
+			"command": "echo 'import * as Sentry from \"@sentry/nextjs\";\n\nSentry.init({\n  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,\n  tracesSampleRate: 1.0,\n});' > sentry.client.config.js"
+		}
+	]
+}

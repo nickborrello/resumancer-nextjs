@@ -29,7 +29,7 @@ export default function LoginPage() {
   return (
     <Card className="p-8 space-y-6 max-w-md mx-auto">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Welcome to Resumancer</h1>
+        <h1 className="text-3xl font-bold text-white">Welcome to Resumancer</h1>
         <p className="text-muted-foreground">Sign in with your account</p>
       </div>
 
