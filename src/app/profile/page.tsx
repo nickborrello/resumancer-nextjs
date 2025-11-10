@@ -1,16 +1,60 @@
-import { auth } from "@/auth";
+'use client';
+
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 
-export default async function ProfilePage() {
-  const session = await auth();
+export default function ProfilePage() {
+  const { data: session, status } = useSession();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      redirect('/login');
+    }
+  }, [status]);
+
+  // Show loading state while session is loading
+  if (status === 'loading') {
+    return (
+      <>
+        <Navbar />
+        <div className="container mx-auto p-6 pt-24">
+          <div className="text-center">Loading...</div>
+        </div>
+      </>
+    );
+  }
 
   if (!session?.user) {
-    redirect('/login');
+    return null; // Will redirect via useEffect
   }
+
+  // Form state for editable fields
+  const [formData, setFormData] = useState({
+    name: session.user.name || '',
+    phone: '',
+    location: '',
+    linkedin: '',
+    portfolio: '',
+    github: '',
+  });
+
+  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: e.target.value
+    }));
+  };
+
+  const handleSave = () => {
+    // TODO: Implement save functionality
+    console.log('Saving profile data:', formData);
+  };
 
   return (
     <>
@@ -42,7 +86,8 @@ export default async function ProfilePage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Full Name</label>
               <Input
-                value={session.user.name || ''}
+                value={formData.name}
+                onChange={handleInputChange('name')}
                 placeholder="Your full name"
               />
             </div>
@@ -51,6 +96,8 @@ export default async function ProfilePage() {
               <label className="text-sm font-medium">Phone Number</label>
               <Input
                 type="tel"
+                value={formData.phone}
+                onChange={handleInputChange('phone')}
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -58,6 +105,8 @@ export default async function ProfilePage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Location</label>
               <Input
+                value={formData.location}
+                onChange={handleInputChange('location')}
                 placeholder="City, State/Country"
               />
             </div>
@@ -67,6 +116,8 @@ export default async function ProfilePage() {
             <label className="text-sm font-medium">LinkedIn URL</label>
             <Input
               type="url"
+              value={formData.linkedin}
+              onChange={handleInputChange('linkedin')}
               placeholder="https://linkedin.com/in/yourprofile"
             />
           </div>
@@ -75,6 +126,8 @@ export default async function ProfilePage() {
             <label className="text-sm font-medium">Portfolio URL</label>
             <Input
               type="url"
+              value={formData.portfolio}
+              onChange={handleInputChange('portfolio')}
               placeholder="https://yourportfolio.com"
             />
           </div>
@@ -83,13 +136,18 @@ export default async function ProfilePage() {
             <label className="text-sm font-medium">GitHub URL</label>
             <Input
               type="url"
+              value={formData.github}
+              onChange={handleInputChange('github')}
               placeholder="https://github.com/yourusername"
             />
           </div>
 
           <div className="flex justify-end gap-3">
             <Button variant="outline">Cancel</Button>
-            <Button className="bg-gradient-to-r from-amethyst-500 to-amethyst-600 hover:from-amethyst-600 hover:to-amethyst-700">
+            <Button 
+              onClick={handleSave}
+              className="bg-gradient-to-r from-amethyst-500 to-amethyst-600 hover:from-amethyst-600 hover:to-amethyst-700"
+            >
               Save Changes
             </Button>
           </div>

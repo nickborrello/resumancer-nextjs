@@ -8,7 +8,8 @@ import OpenAI from 'openai'
 export const runtime = 'nodejs'
 
 const openai = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
+  apiKey: process.env['OPENROUTER_API_KEY'],
+  baseURL: 'https://openrouter.ai/api/v1',
 })
 
 export async function POST(request: NextRequest) {
@@ -76,9 +77,9 @@ Please create a comprehensive resume that matches the job description. Return on
 }
 `
 
-    // Call OpenAI
+    // Call OpenRouter (using Claude for resume generation)
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'anthropic/claude-3-haiku',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     })
@@ -96,41 +97,57 @@ Please create a comprehensive resume that matches the job description. Return on
       throw new Error('Invalid response format from AI service')
     }
 
-    // Perform atomic transaction
-    const result = await db.transaction(async (tx) => {
-      // Create the resume
-      const newResume = await tx
-        .insert(resumes)
-        .values({
-          userId: session.user.id,
-          profileId: profile.length > 0 ? profile[0]!.id : null,
-          title: `Resume for ${jobDescription.slice(0, 50)}...`,
-          jobDescription,
-          resumeData,
-        })
-        .returning()
+    // Perform atomic transaction for debugging
+    try {
+      console.log('Starting database transaction...');
+      await db.transaction(async (tx) => {
+        try {
+          // 1. Prepare and log data for resume insert
+          const resumeInsertData = {
+            userId: session.user.id,
+            profileId: profile.length > 0 ? profile[0]!.id : null,
+            title: `Resume for ${jobDescription.slice(0, 50)}...`,
+            jobDescription,
+            resumeData,
+          };
+          console.log('DEBUG: Inserting into resumes:', JSON.stringify(resumeInsertData, null, 2));
+          await tx.insert(resumes).values(resumeInsertData);
 
-      // Decrement user credits
-      await tx
-        .update(users)
-        .set({ credits: (user[0]?.credits ?? 0) - 1 })
-        .where(eq(users.id, session.user.id))
+          // 2. Prepare and log data for user credit update
+          const newCredits = (user[0]?.credits ?? 0) - 1;
+          console.log(`DEBUG: Updating user ${session.user.id} credits to:`, newCredits);
+          await tx
+            .update(users)
+            .set({ credits: newCredits })
+            .where(eq(users.id, session.user.id));
 
-      // Log credit transaction
-      await tx
-        .insert(creditTransactions)
-        .values({
-          userId: session.user.id,
-          type: 'generation',
-          amount: 1,
-          description: 'AI Resume Generation',
-          resumeId: newResume[0]!.id,
-        })
+          // 3. Prepare and log data for credit transaction
+          const creditLogData = {
+            userId: session.user.id,
+            type: 'generation' as const,
+            amount: 1,
+            description: 'AI Resume Generation',
+            resumeId: null, // Set to null as we can't get the ID from the insert on SQLite
+          };
+          console.log('DEBUG: Inserting into creditTransactions:', JSON.stringify(creditLogData, null, 2));
+          await tx.insert(creditTransactions).values(creditLogData);
 
-      return newResume[0]
-    })
+          console.log('Transaction completed successfully.');
 
-    return NextResponse.json(result)
+        } catch (txError) {
+          console.error('ERROR INSIDE TRANSACTION:', txError);
+          throw txError; // Ensure the transaction rolls back
+        }
+      });
+    } catch (dbError) {
+      // This will catch the error thrown from the transaction block
+      console.error('ERROR DURING DB TRANSACTION:', dbError);
+      // Re-throw or handle as needed, for now just let the outer catch handle it
+      throw dbError;
+    }
+
+
+    return NextResponse.json({ success: true, message: 'Resume generated successfully.' })
   } catch (error) {
     console.error('Error in resume generation:', error)
     return NextResponse.json(
