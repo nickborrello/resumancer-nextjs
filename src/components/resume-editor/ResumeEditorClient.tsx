@@ -17,6 +17,9 @@ import { ResumePreview } from '@/components/resume-preview/ResumePreview';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { ResumeData } from '@/types/resume';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
+import { ResumePDFDocument } from './ResumePDFDocument';
 
 interface ResumeEditorClientProps {
   resumeId: string;
@@ -29,6 +32,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState('personal');
   const [showPreview, setShowPreview] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Load resume data from backend or localStorage
   const getDefaultValues = () => {
@@ -161,9 +165,31 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     }
   };
 
-  const handleDownloadPDF = () => {
-    // Placeholder for PDF download
-    alert('PDF download will be implemented with @react-pdf/renderer');
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      // Get current form data
+      const currentData = methods.getValues();
+      
+      // Generate PDF blob
+      const pdfDocument = <ResumePDFDocument data={currentData as ResumeData} />;
+      const blob = await pdf(pdfDocument).toBlob();
+      
+      // Create filename from personal info or use default
+      const fileName = currentData.personalInfo.fullName
+        ? `${currentData.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`
+        : 'Resume.pdf';
+      
+      // Download the file
+      saveAs(blob, fileName);
+      
+      console.log('✅ PDF generated and downloaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const onSubmit = async (data: ResumeFormData) => {
@@ -195,10 +221,11 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
             <Button 
               type="button" 
               onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
             >
               <Download className="h-4 w-4 mr-2" />
-              Download PDF
+              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
             </Button>
           </div>
         </div>
