@@ -1,0 +1,35 @@
+
+> resumancer-nextjs@0.1.0 build
+> next build
+
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Nick\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Nick\OneDrive\Desktop\Projectos\resumancer-app\resumancer-nextjs\package-lock.json
+
+   Γû▓ Next.js 16.0.1 (Turbopack)
+   - Environments: .env.local
+
+ ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 2.1s
+   Running TypeScript ...
+Failed to compile.
+
+./src/components/resume-editor/ResumeEditorClient.tsx:32:5
+Type error: Type 'Resolver<{ personalInfo: { fullName: string; email: string; phone?: string | undefined; location?: string | undefined; linkedin?: string | undefined; github?: string | undefined; portfolio?: string | undefined; }; ... 4 more ...; skills?: { ...; }[] | undefined; }, any, { ...; }>' is not assignable to type 'Resolver<{ personalInfo: { fullName: string; email: string; phone?: string | undefined; location?: string | undefined; linkedin?: string | undefined; github?: string | undefined; portfolio?: string | undefined; }; ... 4 more ...; professionalSummary?: string | undefined; }, any, { ...; }>'.
+  Types of parameters 'options' and 'options' are incompatible.
+    Type 'ResolverOptions<{ personalInfo: { fullName: string; email: string; phone?: string | undefined; location?: string | undefined; linkedin?: string | undefined; github?: string | undefined; portfolio?: string | undefined; }; ... 4 more ...; professionalSummary?: string | undefined; }>' is not assignable to type 'ResolverOptions<{ personalInfo: { fullName: string; email: string; phone?: string | undefined; location?: string | undefined; linkedin?: string | undefined; github?: string | undefined; portfolio?: string | undefined; }; ... 4 more ...; skills?: { ...; }[] | undefined; }>'.
+      Type '{ id: string; institution: string; degree: string; field: string; startDate: string; endDate?: string | undefined; gpa?: string | undefined; description?: string | undefined; }[] | undefined' is not assignable to type '{ id: string; institution: string; degree: string; field: string; startDate: string; endDate?: string | undefined; gpa?: string | undefined; description?: string | undefined; }[]'.
+        Type 'undefined' is not assignable to type '{ id: string; institution: string; degree: string; field: string; startDate: string; endDate?: string | undefined; gpa?: string | undefined; description?: string | undefined; }[]'.
+
+  30 |
+  31 |   const methods = useForm<ResumeFormData>({
+> 32 |     resolver: zodResolver(resumeDataSchema),
+     |     ^
+  33 |     defaultValues: initialData ? {
+  34 |       personalInfo: initialData.personalInfo,
+  35 |       professionalSummary: initialData.professionalSummary,
+Next.js build worker exited with code: 1 and signal: null
