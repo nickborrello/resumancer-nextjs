@@ -51,7 +51,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verificationTokensTable: schema.verificationTokens,
   }),
   providers: [
-    Google,
+    Google({
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          emailVerified: profile.email_verified ? new Date() : null,
+        }
+      }
+    }),
     GitHub,
     MicrosoftEntraId,
   ],
@@ -72,6 +82,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .select({
             credits: schema.users.credits,
             subscriptionTier: schema.users.subscription_tier,
+            emailVerified: schema.users.emailVerified,
           })
           .from(schema.users)
           .where(eq(schema.users.id, user.id))
@@ -83,12 +94,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user.id = user.id
           session.user.credits = userData.credits ?? 0
           session.user.subscriptionTier = userData.subscriptionTier ?? "free"
+          session.user.emailVerified = userData.emailVerified ?? null
         } else {
           // User not found in database, log error and set defaults
           console.error(`User with id ${user.id} not found in database`)
           session.user.id = user.id
           session.user.credits = 0
           session.user.subscriptionTier = "free"
+          session.user.emailVerified = null
         }
 
         return session
