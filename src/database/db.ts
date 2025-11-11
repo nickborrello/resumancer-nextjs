@@ -1,23 +1,24 @@
 /**
  * Database Client Configuration for Drizzle ORM
- * 
- * Configures SQLite connection for NextAuth.js session storage.
- * Uses better-sqlite3 for local development.
- * 
+ *
+ * Configures PostgreSQL connection for production deployment.
+ * Uses postgres driver for database operations.
+ *
  * Environment Variables Required:
- * - DATABASE_URL: SQLite file path (optional, defaults to ./dev.db)
+ * - DATABASE_URL: PostgreSQL connection string
  */
 
-import Database from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
+import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres"
 import * as schema from "./schema"
 
-const sqlite = new Database(process.env.DATABASE_URL || "./dev.db")
+// Create PostgreSQL connection
+const client = postgres(process.env.DATABASE_URL!)
 
 /**
  * Drizzle ORM Database Instance
- * 
+ *
  * Exports a configured Drizzle instance with the schema.
  * Use this `db` object for all database operations.
  */
-export const db = drizzle(sqlite, { schema })
+export const db = drizzle(client, { schema })

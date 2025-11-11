@@ -135,7 +135,7 @@ export class CreditsService {
       const packages = await db
         .select()
         .from(creditPackages)
-        .where(eq(creditPackages.isActive, true))
+        .where(eq(creditPackages.isActive, 1))
         .orderBy(creditPackages.sortOrder);
 
       return packages;

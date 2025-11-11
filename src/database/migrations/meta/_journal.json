@@ -1,26 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1762813051568,
-      "tag": "0000_classy_mimic",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1762818937535,
-      "tag": "0001_friendly_wolfpack",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1762819054133,
-      "tag": "0002_pale_newton_destine",
+      "version": "7",
+      "when": 1762820599213,
+      "tag": "0000_parallel_juggernaut",
       "breakpoints": true
     }
   ]
