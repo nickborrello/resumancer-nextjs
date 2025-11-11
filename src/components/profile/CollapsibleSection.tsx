@@ -55,25 +55,29 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
   return (
     <div className="border border-amethyst-500/20 rounded-lg overflow-hidden">
-      <Button
-        onClick={toggleOpen}
-        variant="ghost"
-        className="w-full flex items-center justify-between p-4 hover:border-amethyst-500/40 hover:bg-amethyst-500/5 transition-colors duration-200"
-        aria-expanded={isOpen}
-        aria-controls={contentId}
-      >
-        <h3 className="text-lg font-semibold bg-gradient-to-r from-amethyst-400 to-purple-500 bg-clip-text text-transparent">
-          {title}
-        </h3>
-        <div className="flex items-center gap-2">
-          {isOpen && actions}
+      <div className="flex items-center justify-between">
+        <Button
+          onClick={toggleOpen}
+          variant="ghost"
+          className="flex-1 flex items-center justify-between p-4 hover:border-amethyst-500/40 hover:bg-amethyst-500/5 transition-colors duration-200 rounded-none border-0"
+          aria-expanded={isOpen}
+          aria-controls={contentId}
+        >
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-amethyst-400 to-purple-500 bg-clip-text text-transparent">
+            {title}
+          </h3>
           <ChevronDown
             className={`w-5 h-5 transform transition-transform duration-300 ease-in-out ${
               isOpen ? 'rotate-180' : ''
             }`}
           />
-        </div>
-      </Button>
+        </Button>
+        {isOpen && actions && (
+          <div className="p-4 pr-4">
+            {actions}
+          </div>
+        )}
+      </div>
       <div
         id={contentId}
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
