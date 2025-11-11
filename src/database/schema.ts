@@ -5,6 +5,7 @@ import {
   uuid,
   timestamp,
   primaryKey,
+  json,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -100,6 +101,10 @@ export const verificationTokens = pgTable(
  *
  * Stores personal and contact information for a user's resume.
  * A user can have one primary profile.
+ *
+ * JSON storage chosen for document-oriented profile data, simplifies MVP implementation,
+ * matches resume document structure; future consideration: migrate to relational tables
+ * if profile search/filtering features required.
  */
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -117,6 +122,26 @@ export const profiles = pgTable("profiles", {
   address2: text("address2"),
   postalCode: text("postal_code"),
   isPrimary: integer("is_primary").default(1),
+  /**
+   * JSON array of education objects matching Education interface from Task 2.1
+   * @see Education interface in src/types/profile.ts
+   */
+  education: json("education").$type<import("@/types/profile").Education[]>(),
+  /**
+   * JSON array of experience objects matching Experience interface from Task 2.1
+   * @see Experience interface in src/types/profile.ts
+   */
+  experiences: json("experiences").$type<import("@/types/profile").Experience[]>(),
+  /**
+   * JSON array of project objects matching Project interface from Task 2.1
+   * @see Project interface in src/types/profile.ts
+   */
+  projects: json("projects").$type<import("@/types/profile").Project[]>(),
+  /**
+   * JSON array of skill category objects matching SkillCategory interface from Task 2.1
+   * @see SkillCategory interface in src/types/profile.ts
+   */
+  skills: json("skills").$type<import("@/types/profile").SkillCategory[]>(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow(),
 });
