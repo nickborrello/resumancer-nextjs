@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Define the applyResumeEdit tool
     const applyResumeEdit = tool({
       description: 'Apply an edit to a specific section of the resume.',
-      parameters: z.object({
+      inputSchema: z.object({
         section: z.enum(['summary', 'experience', 'education', 'skills', 'projects']),
         entityId: z.string().optional().describe('The database ID of the experience, education, or project item.'),
         originalText: z.string().describe('The original bullet point or text to be replaced.'),
@@ -67,7 +67,7 @@ Use the tool multiple times if you have multiple suggestions. Each tool call rep
     })
 
     // Return the streaming response
-    return result.toAIStreamResponse()
+    return result.toUIMessageStreamResponse()
   } catch (error) {
     console.error('Error in AI suggestions:', error)
     return new Response(JSON.stringify({ error: 'Failed to generate suggestions' }), {

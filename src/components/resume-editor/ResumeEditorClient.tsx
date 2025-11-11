@@ -15,16 +15,16 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, Download, Eye, FileText, Sparkles } from 'lucide-react';
 import { ResumePreview } from '@/components/resume-preview/ResumePreview';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { ResumeData } from '@/types/resume';
+import type { ResumeData, Resume } from '@/types/resume';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import { ResumePDFDocument } from './ResumePDFDocument';
 
 interface ResumeEditorClientProps {
   resumeId: string;
-  initialData?: ResumeData;
+  initialData?: Resume;
   mode: 'edit' | 'create';
 }
 
@@ -36,33 +36,25 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
 
-  // Load resume data from backend or localStorage
+  // Track the last saved data to prevent unnecessary saves
+  const lastSavedDataRef = useRef<string | null>(null);
+
+  // This function is now "pure" and only returns synchronous data.
+  // It no longer causes a side effect (setting state).
   const getDefaultValues = useCallback(() => {
     if (initialData) {
       return {
-        personalInfo: initialData.personalInfo,
-        professionalSummary: initialData.professionalSummary,
-        education: initialData.education,
-        experiences: initialData.experiences,
-        projects: initialData.projects,
-        skills: initialData.skills,
+        personalInfo: initialData.resumeData.personalInfo,
+        professionalSummary: initialData.resumeData.professionalSummary,
+        education: initialData.resumeData.education,
+        experiences: initialData.resumeData.experiences,
+        projects: initialData.resumeData.projects,
+        skills: initialData.resumeData.skills,
       };
     }
 
-    // Try to load from localStorage as fallback
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`resume-draft-${resumeId}`);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setLastSaved(new Date(parsed.savedAt));
-          return parsed.data;
-        } catch (e) {
-          console.error('Failed to parse saved resume:', e);
-        }
-      }
-    }
-
+    // Default to an empty form. 
+    // The useEffect below will handle loading from backend or localStorage.
     return {
       personalInfo: { fullName: '', email: '', phone: '', location: '', linkedin: '', github: '', portfolio: '' },
       professionalSummary: '',
@@ -71,7 +63,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
       projects: [],
       skills: [],
     };
-  }, [initialData, resumeId]);
+  }, [initialData]);
 
   const methods = useForm<ResumeFormData>({
     resolver: zodResolver(resumeDataSchema),
@@ -117,12 +109,25 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     }
   }, [resumeId]);
 
-  // Load resume from backend on mount
+  // Load resume data on mount
   useEffect(() => {
-    const loadResumeFromBackend = async () => {
-      // Skip if we already have initialData
-      if (initialData) return;
+    const loadResume = async () => {
+      // 1. If initialData is provided, use it.
+      if (initialData) {
+        methods.reset({
+          personalInfo: initialData.resumeData.personalInfo,
+          professionalSummary: initialData.resumeData.professionalSummary,
+          education: initialData.resumeData.education,
+          experiences: initialData.resumeData.experiences,
+          projects: initialData.resumeData.projects,
+          skills: initialData.resumeData.skills,
+        });
+        setLastSaved(new Date(initialData.updatedAt || initialData.createdAt));
+        console.log('✅ Resume loaded from initialData');
+        return;
+      }
 
+      // 2. If no initialData, try to fetch from backend
       try {
         const response = await fetch(`/api/resumes/${resumeId}`, {
           method: 'GET',
@@ -143,18 +148,39 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
           });
           setLastSaved(new Date(resumeData.updatedAt || resumeData.createdAt));
           console.log('✅ Resume loaded from backend');
+          return; // Successfully loaded from backend
         }
       } catch (error) {
-        console.warn('⚠️ Failed to load from backend, using localStorage:', error);
+        console.warn('⚠️ Failed to load from backend:', error);
+      }
+
+      // 3. If backend fails or is skipped, try localStorage as a last resort
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(`resume-draft-${resumeId}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            methods.reset(parsed.data); // Load data into the form
+            setLastSaved(new Date(parsed.savedAt)); // NOW it's safe to set state
+            console.log('✅ Resume loaded from localStorage fallback');
+          } catch (e) {
+            console.error('Failed to parse saved resume:', e);
+          }
+        }
       }
     };
 
-    loadResumeFromBackend();
-  }, [resumeId, initialData]);
+    loadResume();
+  }, [resumeId, initialData, methods]); // Add `methods` to the dependency array
 
   useEffect(() => {
     if (debouncedData) {
-      saveResume(debouncedData);
+      // Only save if the data has actually changed
+      const currentDataString = JSON.stringify(debouncedData);
+      if (lastSavedDataRef.current !== currentDataString) {
+        lastSavedDataRef.current = currentDataString;
+        saveResume(debouncedData);
+      }
     }
   }, [debouncedData, saveResume]);
 
