@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 
@@ -605,9 +604,11 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
         ) : (
           <div className="animate-fade-in">
             {/* Personal Information */}
-            <Card className="p-6 space-y-6">
+            <CollapsibleSection
+              title="Personal Information"
+              defaultOpen={false}
+            >
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-amethyst-400">Personal Information</h2>
                 <p className="text-sm text-muted-foreground">Update your personal details</p>
               </div>
 
@@ -636,7 +637,7 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
                   />
                   {(errors?.['firstName'] || errors?.['lastName']) && (
                     <p id="name-error" className="text-red-500 text-sm mt-1">
-                      {errors?.['firstName']?.[0] || errors?.['lastName']?.[0]}
+                      {(errors['firstName'] as string[])?.[0] || (errors['lastName'] as string[])?.[0]}
                     </p>
                   )}
                 </div>
@@ -771,12 +772,47 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
                   )}
                 </Button>
               </div>
-            </Card>
+            </CollapsibleSection>
+
+            {/* Profile Sections */}
+            <CollapsibleSection
+              title="Education"
+              defaultOpen={false}
+              actions={<Button onClick={handleAddEducation} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
+            >
+              <EducationForm education={education} onChange={setEducation} errors={errors?.['education'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Experience"
+              defaultOpen={false}
+              actions={<Button onClick={handleAddExperience} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
+            >
+              <ExperienceForm experiences={experiences} onChange={setExperiences} errors={errors?.['experiences'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Projects"
+              defaultOpen={false}
+              actions={<Button onClick={handleAddProject} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
+            >
+              <ProjectsForm projects={projects} onChange={setProjects} errors={errors?.['projects'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Skills"
+              defaultOpen={false}
+              actions={<Button onClick={handleAddSkillCategory} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
+            >
+              <SkillsForm skills={skills} onChange={setSkills} errors={errors?.['skills'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
+            </CollapsibleSection>
 
             {/* Account Information */}
-            <Card className="p-6 space-y-4">
+            <CollapsibleSection
+              title="Account Information"
+              defaultOpen={true}
+            >
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-amethyst-400">Account Information</h2>
                 <p className="text-sm text-muted-foreground">Your account details</p>
               </div>
 
@@ -807,48 +843,10 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
                   </span>
                 </div>
               </div>
-            </Card>
-
-            {/* Profile Sections */}
-            <div className="space-y-6">
-              <CollapsibleSection
-                title="Education"
-                defaultOpen={true}
-                actions={<Button onClick={handleAddEducation} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
-              >
-                <EducationForm education={education} onChange={setEducation} errors={errors?.['education'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Experience"
-                defaultOpen={false}
-                actions={<Button onClick={handleAddExperience} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
-              >
-                <ExperienceForm experiences={experiences} onChange={setExperiences} errors={errors?.['experiences'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Projects"
-                defaultOpen={false}
-                actions={<Button onClick={handleAddProject} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
-              >
-                <ProjectsForm projects={projects} onChange={setProjects} errors={errors?.['projects'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Skills"
-                defaultOpen={false}
-                actions={<Button onClick={handleAddSkillCategory} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
-              >
-                <SkillsForm skills={skills} onChange={setSkills} errors={errors?.['skills'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
-              </CollapsibleSection>
-            </div>
+            </CollapsibleSection>
           </div>
         )}
       </div>
-
-      {/* Auto-save status indicator */}
-      {/* Replaced with toast notifications */}
     </>
   );
 }

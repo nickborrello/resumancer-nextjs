@@ -66,7 +66,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           {title}
         </h3>
         <div className="flex items-center gap-2">
-          {actions}
+          {isOpen && actions}
           <ChevronDown
             className={`w-5 h-5 transform transition-transform duration-300 ease-in-out ${
               isOpen ? 'rotate-180' : ''

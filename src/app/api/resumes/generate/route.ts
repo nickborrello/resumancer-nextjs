@@ -3,14 +3,9 @@ import { auth } from '@/auth'
 import { db } from '@/database/db'
 import { eq } from 'drizzle-orm'
 import { resumes, users, creditTransactions, profiles } from '@/database/schema'
-import OpenAI from 'openai'
+import { ResumeService } from '@/services/resumeService'
 
 export const runtime = 'nodejs'
-
-const openai = new OpenAI({
-  apiKey: process.env['OPENROUTER_API_KEY'],
-  baseURL: 'https://openrouter.ai/api/v1',
-})
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,49 +50,22 @@ export async function POST(request: NextRequest) {
       .where(eq(profiles.userId, session.user.id))
       .limit(1)
 
-    // Construct OpenAI prompt
+    // Use the ResumeService to generate resume with multi-step AI optimization
     const profileData = profile.length > 0 ? profile[0] : {}
-    const prompt = `
-Generate a professional resume in JSON format based on the following:
-
-Job Description:
-${jobDescription}
-
-User Profile:
-${JSON.stringify(profileData, null, 2)}
-
-Please create a comprehensive resume that matches the job description. Return only valid JSON with the following structure:
-{
-  "personalInfo": {...},
-  "professionalSummary": "...",
-  "education": [...],
-  "experiences": [...],
-  "projects": [...],
-  "skills": [...]
-}
-`
-
-    // Call OpenRouter (using Claude for resume generation)
-    const completion = await openai.chat.completions.create({
-      model: 'anthropic/claude-3-haiku',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
+    const result = await ResumeService.generateResume({
+      jobDescription,
+      profile: profileData,
+      options: {},
     })
 
-    const generatedContent = completion.choices[0]?.message?.content
-    if (!generatedContent) {
-      throw new Error('Failed to generate resume content')
+    if (!result.success) {
+      throw new Error('Failed to generate resume')
     }
 
-    let resumeData
-    try {
-      resumeData = JSON.parse(generatedContent)
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError)
-      throw new Error('Invalid response format from AI service')
-    }
+    const resumeData = result.resume
 
-    // Perform atomic transaction for debugging
+    // Perform atomic transaction for database operations
+    let resumeId: string | null = null;
     try {
       console.log('Starting database transaction...');
       await db.transaction(async (tx) => {
@@ -106,12 +74,17 @@ Please create a comprehensive resume that matches the job description. Return on
           const resumeInsertData = {
             userId: session.user.id,
             profileId: profile.length > 0 ? profile[0]!.id : null,
-            title: `Resume for ${jobDescription.slice(0, 50)}...`,
+            title: resumeData.title || `Resume for ${jobDescription.slice(0, 50)}...`,
             jobDescription,
             resumeData,
           };
           console.log('DEBUG: Inserting into resumes:', JSON.stringify(resumeInsertData, null, 2));
-          await tx.insert(resumes).values(resumeInsertData);
+          const insertedResumes = await tx.insert(resumes).values(resumeInsertData).returning({ id: resumes.id });
+          if (insertedResumes.length === 0) {
+            throw new Error('Failed to insert resume');
+          }
+          resumeId = insertedResumes[0]!.id;
+          console.log('DEBUG: Inserted resume with ID:', resumeId);
 
           // 2. Prepare and log data for user credit update
           const newCredits = (user[0]?.credits ?? 0) - 1;
@@ -127,7 +100,7 @@ Please create a comprehensive resume that matches the job description. Return on
             type: 'generation' as const,
             amount: 1,
             description: 'AI Resume Generation',
-            resumeId: null, // Set to null as we can't get the ID from the insert on SQLite
+            resumeId: resumeId,
           };
           console.log('DEBUG: Inserting into creditTransactions:', JSON.stringify(creditLogData, null, 2));
           await tx.insert(creditTransactions).values(creditLogData);
@@ -146,8 +119,12 @@ Please create a comprehensive resume that matches the job description. Return on
       throw dbError;
     }
 
-
-    return NextResponse.json({ success: true, message: 'Resume generated successfully.' })
+    return NextResponse.json({
+      success: true,
+      message: 'Resume generated successfully.',
+      isDemo: result.isDemo,
+      resumeId: resumeId
+    })
   } catch (error) {
     console.error('Error in resume generation:', error)
     return NextResponse.json(

@@ -23,15 +23,22 @@ const Tabs = React.forwardRef<
     <div
       ref={ref}
       className={cn("", className)}
-      data-active-tab={activeTab}
       {...props}
     >
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as any, {
-            activeTab,
-            onTabChange: handleTabChange,
-          });
+          // Only pass activeTab and onTabChange to tab components, not to arbitrary DOM elements
+          const isTabComponent = child.type === TabsList || child.type === TabsTrigger || child.type === TabsContent ||
+                                (child.type as any)?.displayName === 'TabsList' ||
+                                (child.type as any)?.displayName === 'TabsTrigger' ||
+                                (child.type as any)?.displayName === 'TabsContent';
+
+          if (isTabComponent) {
+            return React.cloneElement(child as any, {
+              activeTab,
+              onTabChange: handleTabChange,
+            });
+          }
         }
         return child;
       })}
@@ -54,10 +61,15 @@ const TabsList = React.forwardRef<
   >
     {React.Children.map(children, (child) => {
       if (React.isValidElement(child)) {
-        return React.cloneElement(child as any, {
-          activeTab,
-          onTabChange,
-        });
+        // Only pass activeTab and onTabChange to TabsTrigger components
+        const isTabTrigger = child.type === TabsTrigger || (child.type as any)?.displayName === 'TabsTrigger';
+
+        if (isTabTrigger) {
+          return React.cloneElement(child as any, {
+            activeTab,
+            onTabChange,
+          });
+        }
       }
       return child;
     })}

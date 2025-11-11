@@ -11,35 +11,76 @@ Modern Next.js 16+ frontend for Resumancer application, featuring AI-powered res
 - **Components:** shadcn/ui (Radix UI primitives)
 - **Authentication:** NextAuth.js v5 (OAuth-only)
 - **Database:** PostgreSQL (production) / SQLite (development)
+- **ORM:** Drizzle ORM
+- **AI Integration:** OpenRouter API
+- **PDF Generation:** @react-pdf/renderer
+- **Payments:** Stripe
+- **Monitoring:** Sentry
+- **Testing:** Playwright
+
+## Features
+
+- ✅ **AI-Powered Resume Optimization**: Multi-step AI processing with keyword extraction, relevance scoring, and bullet point optimization
+- ✅ **Resume Builder**: Full-featured resume editor with tabbed interface
+- ✅ **PDF Generation**: Client-side PDF creation and download
+- ✅ **Authentication**: OAuth integration (Google, GitHub, Microsoft)
+- ✅ **Database Integration**: Full CRUD operations with Drizzle ORM
+- ✅ **Real-time Preview**: Live resume preview while editing
+- ✅ **Auto-save**: Automatic saving to localStorage and backend
+- ✅ **Credit System**: AI usage tracking and billing integration
+- ✅ **Admin Panel**: Administrative features and analytics
 
 ## Project Structure
 
 ```
 resumancer-nextjs/
 ├── src/
-│   ├── app/              # Next.js App Router pages and layouts
-│   ├── components/       # React components
-│   │   └── ui/          # shadcn/ui components
-│   ├── lib/             # Utility functions and shared logic
-│   ├── types/           # TypeScript type definitions
-│   ├── contexts/        # React context providers
-│   ├── hooks/           # Custom React hooks
-│   ├── services/        # API services and integrations
-│   └── utils/           # Helper functions and formatters
-├── public/              # Static assets
-└── [config files]       # Configuration files
+│   ├── app/                    # Next.js App Router
+│   │   ├── (auth)/            # Authentication pages
+│   │   ├── api/               # API routes
+│   │   │   ├── admin/         # Admin endpoints
+│   │   │   ├── auth/          # Authentication endpoints
+│   │   │   ├── credits/       # Credit management
+│   │   │   ├── profile/       # User profile
+│   │   │   ├── resumes/       # Resume CRUD operations
+│   │   │   └── stripe/        # Payment processing
+│   │   ├── builder/           # Resume builder pages
+│   │   ├── credits/           # Credits management
+│   │   ├── dashboard/         # User dashboard
+│   │   ├── profile/           # User profile pages
+│   │   ├── resume/            # Resume viewing/editing
+│   │   └── resumes/           # Resume management
+│   ├── components/            # React components
+│   │   ├── resume-editor/     # Resume editor components
+│   │   ├── resume-preview/    # Resume preview components
+│   │   └── ui/               # shadcn/ui components
+│   ├── contexts/             # React context providers
+│   ├── database/             # Database schema and configuration
+│   ├── hooks/                # Custom React hooks
+│   ├── lib/                  # Utility functions and shared logic
+│   ├── services/             # API services and integrations
+│   ├── types/                # TypeScript type definitions
+│   ├── utils/                # Helper functions and formatters
+│   └── middleware.ts         # Next.js middleware
+├── public/                   # Static assets
+├── tests/                    # Playwright tests
+└── [config files]           # Configuration files
 ```
 
 ## Prerequisites
 
 - **Node.js:** 18.x or higher
 - **Package Manager:** npm, yarn, pnpm, or bun
-- **Backend API:** Express server running on port 3000
+- **Database:** PostgreSQL (production) or SQLite (development)
 - **Environment Variables:** Properly configured (see Configuration section)
 
 ## Installation
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd resumancer-nextjs
+
 # Install dependencies
 npm install
 
@@ -59,6 +100,19 @@ npm run dev
 
 The application will be available at [http://localhost:3001](http://localhost:3001)
 
+### Database Setup
+
+```bash
+# Generate database schema
+npm run db:generate
+
+# Run database migrations
+npm run db:migrate
+
+# Open Drizzle Studio (database GUI)
+npm run db:studio
+```
+
 ### Build for Production
 
 ```bash
@@ -67,6 +121,22 @@ npm run build
 
 # Start production server
 npm start
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests in headed mode
+npm run test:headed
+
+# View test reports
+npm run test:report
 ```
 
 ### Code Quality
@@ -81,71 +151,65 @@ npm run type-check
 
 ## Configuration
 
-### Port Configuration
-
-- **Next.js App:** Port 3001 (configured in package.json dev script)
-- **Backend API:** Port 3000 (Express server)
-- **Legacy Vite App:** Port 5173 (during incremental migration)
-
-All three servers can run simultaneously during the migration phase.
-
 ### Environment Variables
 
 Create a `.env.local` file in the project root with the following variables:
 
 ```env
-# Backend API Configuration
-BACKEND_API_URL=http://localhost:3000
+# Database Configuration
+# PostgreSQL connection string for production
+# Format: postgresql://username:password@host:port/database
+# Local development: Uses SQLite automatically if not set
+DATABASE_URL=postgresql://username:password@localhost:5432/resumancer
 
-# NextAuth.js Configuration
-NEXTAUTH_URL=http://localhost:3001
-NEXTAUTH_SECRET=your-secret-here
+# NextAuth.js v5 Configuration
+# AUTH_SECRET is REQUIRED for authentication to work
+# Generate with: openssl rand -base64 32
+AUTH_SECRET=your-secret-key-here
 
-# OAuth Providers (placeholders - replace with real credentials)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
+# OAuth Providers - NextAuth v5 Naming Convention
+
+# Google OAuth
+# Get credentials from: https://console.cloud.google.com/apis/credentials
+# Callback URL: http://localhost:3001/api/auth/callback/google
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
+
+# GitHub OAuth
+# Get credentials from: https://github.com/settings/developers
+# Callback URL: http://localhost:3001/api/auth/callback/github
+AUTH_GITHUB_ID=your-github-client-id
+AUTH_GITHUB_SECRET=your-github-client-secret
+
+# Microsoft Entra ID (Azure AD) OAuth
+# Get credentials from: https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
+# Callback URL: http://localhost:3001/api/auth/callback/microsoft-entra-id
+AUTH_MICROSOFT_ENTRA_ID_ID=your-microsoft-client-id
+AUTH_MICROSOFT_ENTRA_ID_SECRET=your-microsoft-client-secret
+AUTH_MICROSOFT_ENTRA_ID_TENANT_ID=your-microsoft-tenant-id
+
+# OpenRouter AI API (for resume optimization)
+# Get API key from: https://openrouter.ai/keys
+OPENROUTER_API_KEY=your-openrouter-api-key
+
+# Stripe Payment Processing
+# Get keys from: https://dashboard.stripe.com/apikeys
+STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+
+# Sentry Error Monitoring
+# Get DSN from: https://sentry.io/settings/projects
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 ```
 
-**Note:** OAuth credentials are placeholders for development. Real credentials must be configured before testing authentication flows.
+### Database Configuration
 
-## Migration Strategy
+The application supports both PostgreSQL (production) and SQLite (development):
 
-This Next.js application is part of an incremental migration from a Vite/React application. Key migration approach:
-
-- **Page-by-page migration:** Core pages migrated individually while maintaining functionality
-- **Coexistence:** Both apps can run simultaneously for A/B testing and gradual rollout
-- **Authentication upgrade:** Replacing Supabase auth with NextAuth.js v5 OAuth-only system
-- **Component library:** Migrating custom components to shadcn/ui with necromancer theme
-- **Type safety:** Adding comprehensive TypeScript strict mode coverage
-
-## Development Workflow
-
-### Multi-App Development
-
-During migration, you may need to run multiple servers:
-
-```bash
-# Terminal 1: Backend API
-cd resumancer-backend
-npm run dev  # Runs on port 3000
-
-# Terminal 2: New Next.js App  
-cd resumancer-nextjs
-npm run dev  # Runs on port 3001
-
-# Terminal 3: Legacy Vite App (optional)
-cd resumancer-frontend  
-npm run dev  # Runs on port 5173
-```
-
-### Testing Strategy
-
-- Test new pages in Next.js app (port 3001)
-- Compare with existing Vite app (port 5173) for feature parity
-- Verify API integration with backend (port 3000)
-- Gradually migrate users from Vite to Next.js
+- **Development:** If `DATABASE_URL` is not set, the app automatically uses SQLite
+- **Production:** Set `DATABASE_URL` to your PostgreSQL connection string
+- **Migrations:** Automatic on production deployment via Railway configuration
 
 ## Available Scripts
 
@@ -156,62 +220,155 @@ npm run dev  # Runs on port 5173
 | `npm start` | Start production server |
 | `npm run lint` | Run ESLint for code quality checks |
 | `npm run type-check` | Type check TypeScript without building |
+| `npm run db:generate` | Generate database migrations from schema |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:studio` | Open Drizzle Studio (database GUI) |
+| `npm run db:push` | Push schema changes directly to database |
+| `npm test` | Run Playwright tests |
+| `npm run test:ui` | Run tests with Playwright UI |
+| `npm run test:headed` | Run tests in headed mode |
+| `npm run test:report` | View Playwright test reports |
+
+## API Routes
+
+### Authentication (`/api/auth`)
+- `GET /api/auth/providers` - Get available OAuth providers
+- `POST /api/auth/signin/*` - OAuth signin callbacks
+- `POST /api/auth/signout` - Sign out user
+
+### Resumes (`/api/resumes`)
+- `GET /api/resumes` - Get user's resumes
+- `POST /api/resumes` - Create new resume
+- `GET /api/resumes/[id]` - Get specific resume
+- `PUT /api/resumes/[id]` - Update resume
+- `DELETE /api/resumes/[id]` - Delete resume
+- `POST /api/resumes/generate` - Generate AI-optimized resume
+
+### AI Suggestions (`/api/resumes/ai-suggestions`)
+- `POST /api/resumes/ai-suggestions` - Get AI suggestions for resume improvement
+
+### Credits (`/api/credits`)
+- `GET /api/credits` - Get user's credit balance
+- `POST /api/credits/purchase` - Purchase credits
+
+### Profile (`/api/profile`)
+- `GET /api/profile` - Get user profile
+- `PUT /api/profile` - Update user profile
+
+### Admin (`/api/admin`)
+- Administrative endpoints for analytics and user management
+
+## Key Components
+
+### Resume Editor
+- **Location:** `src/components/resume-editor/`
+- **Features:** Tabbed interface, form validation, auto-save, AI suggestions
+- **Components:** PersonalInfoSection, ExperienceSection, EducationSection, etc.
+
+### AI Services
+- **Location:** `src/services/`
+- **Services:** OpenRouter integration for AI-powered resume optimization
+- **Features:** Keyword extraction, relevance scoring, bullet optimization
+
+### Database
+- **Location:** `src/database/`
+- **Schema:** Complete database schema with relations
+- **ORM:** Drizzle ORM with type-safe queries
+
+## Deployment
+
+### Production Deployment
+- **Platform:** Railway (recommended)
+- **Database:** PostgreSQL on Railway
+- **Build Command:** `npm run build`
+- **Start Command:** `npm start`
+- **Environment:** Production environment variables
+
+### Development Deployment
+- **Local:** SQLite database (automatic fallback)
+- **Port:** 3001
+- **Hot Reload:** Enabled with Turbopack
 
 ## Troubleshooting
 
 ### Port Conflicts
+```bash
+# Check what's using port 3001
+netstat -ano | findstr :3001
 
-**Problem:** Port 3001 already in use  
-**Solution:** 
-- Check for running processes: `netstat -ano | findstr :3001`
-- Kill process or change port in package.json dev script
+# Kill process (replace PID)
+taskkill /PID <PID> /F
 
-### Development Server Won\'t Start
+# Or use the kill-port utility
+npx kill-port 3001
+```
 
-**Problem:** Server fails to start  
-**Solution:**
-- Verify Node.js version (18+): `node --version`
-- Clear cache and reinstall: `rm -rf node_modules .next && npm install`
-- Check for TypeScript errors: `npm run type-check`
+### Database Issues
+```bash
+# Reset database (development only)
+npm run db:push
 
-### API Proxy Not Working
+# View database in browser
+npm run db:studio
 
-**Problem:** Frontend can\'t reach backend API  
-**Solution:**
-- Verify backend is running on port 3000
-- Check `next.config.js` rewrite configuration
-- Verify environment variable `BACKEND_API_URL` is set correctly
-- Check browser console for CORS errors
+# Check migration status
+npm run db:migrate
+```
 
-### Environment Variables Not Loading
+### Authentication Issues
+- Verify `AUTH_SECRET` is set and secure
+- Check OAuth provider credentials are correct
+- Ensure callback URLs match provider configuration
+- Check browser console for authentication errors
 
-**Problem:** Environment variables undefined  
-**Solution:**
-- Ensure `.env.local` exists in project root
-- Restart development server after changing environment variables
-- Verify variable names start with `NEXT_PUBLIC_` for client-side access (if needed)
-- Check for syntax errors in `.env.local` file
+### AI Service Issues
+- Verify `OPENROUTER_API_KEY` is set
+- Check API rate limits and credits
+- Review OpenRouter dashboard for usage
 
-## Next Steps
+### Build Issues
+```bash
+# Clear Next.js cache
+rm -rf .next
 
-After initial setup, the following tasks are planned:
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
 
-1. **TypeScript Strict Mode:** Configure comprehensive strict mode settings (Task 1.2)
-2. **shadcn/ui Integration:** Install and configure component library (Task 1.3)
-3. **Routing Architecture:** Set up route groups and layouts (Task 1.4)
-4. **NextAuth.js:** Implement OAuth authentication (Phase 2)
-5. **Page Migration:** Migrate core pages from Vite app (Phase 3)
-6. **Necromancer Theme:** Implement custom dark Gothic theme (Phase 5)
+# Check TypeScript errors
+npm run type-check
+```
+
+## Development Workflow
+
+### Code Style
+- **TypeScript:** Strict mode enabled
+- **Components:** Functional components with hooks
+- **Styling:** Tailwind CSS with custom Amethyst theme
+- **Forms:** React Hook Form with Zod validation
+- **State:** React Context for global state
+
+### Git Workflow
+- **Branching:** Feature branches from `main`
+- **Commits:** Conventional commit format
+- **PRs:** Required for all changes
+- **Testing:** Automated tests before merge
+
+### Performance
+- **Server Components:** Used by default in Next.js 13+
+- **Client Components:** Only when needed (marked with `'use client'`)
+- **Optimization:** Automatic code splitting and optimization
 
 ## Contributing
 
-This is a managed migration project. Please follow the established patterns and conventions:
-
-- Use TypeScript strict mode
-- Follow Next.js App Router patterns (Server Components by default)
-- Apply necromancer theme styling consistently
-- Maintain comprehensive documentation
-- Write tests for critical functionality
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes with proper TypeScript types
+4. Add tests for new functionality
+5. Ensure all tests pass: `npm test`
+6. Run linting: `npm run lint`
+7. Commit with conventional format
+8. Push and create a Pull Request
 
 ## License
 
@@ -219,4 +376,12 @@ This is a managed migration project. Please follow the established patterns and 
 
 ## Support
 
-For questions or issues, contact the development team or refer to the project documentation in the `.apm` directory.
+For questions or issues:
+- Check existing GitHub issues
+- Review the troubleshooting section above
+- Contact the development team
+
+---
+
+**Last Updated:** November 11, 2025
+**Status:** Production Ready

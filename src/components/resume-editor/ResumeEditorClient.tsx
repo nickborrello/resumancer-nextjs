@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, Download, Eye, FileText, Sparkles } from 'lucide-react';
 import { ResumePreview } from '@/components/resume-preview/ResumePreview';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { ResumeData } from '@/types/resume';
 import { pdf } from '@react-pdf/renderer';
@@ -37,7 +37,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const [showAISuggestions, setShowAISuggestions] = useState(false);
 
   // Load resume data from backend or localStorage
-  const getDefaultValues = () => {
+  const getDefaultValues = useCallback(() => {
     if (initialData) {
       return {
         personalInfo: initialData.personalInfo,
@@ -71,7 +71,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
       projects: [],
       skills: [],
     };
-  };
+  }, [initialData, resumeId]);
 
   const methods = useForm<ResumeFormData>({
     resolver: zodResolver(resumeDataSchema),
@@ -81,6 +81,41 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
 
   const watchedData = methods.watch();
   const debouncedData = useDebounce(watchedData, 1500);
+
+  // Function to get current resume data for AI suggestions
+  const getCurrentResumeData = useCallback(() => methods.getValues(), [methods]);
+
+  const saveResume = useCallback(async (data: ResumeFormData) => {
+    setIsSaving(true);
+    try {
+      // Save to backend first (primary storage)
+      const response = await fetch(`/api/resumes/${resumeId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        console.log('✅ Resume saved to backend');
+      } else {
+        console.warn('⚠️ Backend save failed, using localStorage fallback');
+      }
+
+      // Always save to localStorage as backup/offline support
+      localStorage.setItem(`resume-draft-${resumeId}`, JSON.stringify({
+        data,
+        savedAt: new Date().toISOString(),
+      }));
+
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to save resume:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [resumeId]);
 
   // Load resume from backend on mount
   useEffect(() => {
@@ -115,45 +150,13 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     };
 
     loadResumeFromBackend();
-  }, [resumeId, initialData, methods]);
+  }, [resumeId, initialData]);
 
   useEffect(() => {
     if (debouncedData) {
       saveResume(debouncedData);
     }
-  }, [debouncedData]);
-
-  const saveResume = async (data: ResumeFormData) => {
-    setIsSaving(true);
-    try {
-      // Save to backend first (primary storage)
-      const response = await fetch(`/api/resumes/${resumeId}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        console.log('✅ Resume saved to backend');
-      } else {
-        console.warn('⚠️ Backend save failed, using localStorage fallback');
-      }
-
-      // Always save to localStorage as backup/offline support
-      localStorage.setItem(`resume-draft-${resumeId}`, JSON.stringify({
-        data,
-        savedAt: new Date().toISOString(),
-      }));
-
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('Failed to save resume:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  }, [debouncedData, saveResume]);
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
@@ -286,7 +289,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
               <div>
                 <div className="sticky top-8">
                   <AISuggestionsPanel
-                    resumeData={methods.watch()}
+                    getResumeData={getCurrentResumeData}
                     onApplySuggestion={handleApplySuggestion}
                     className="max-h-[calc(100vh-8rem)] overflow-y-auto"
                   />

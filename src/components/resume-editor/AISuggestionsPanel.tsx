@@ -15,12 +15,12 @@ interface AISuggestion {
 }
 
 interface AISuggestionsPanelProps {
-  resumeData: any;
+  getResumeData: () => any;
   onApplySuggestion: (suggestion: AISuggestion) => void;
   className?: string;
 }
 
-export function AISuggestionsPanel({ resumeData, onApplySuggestion, className }: AISuggestionsPanelProps) {
+export function AISuggestionsPanel({ getResumeData, onApplySuggestion, className }: AISuggestionsPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +31,7 @@ export function AISuggestionsPanel({ resumeData, onApplySuggestion, className }:
     setError(null);
 
     try {
+      const resumeData = getResumeData();
       const response = await fetch('/api/resumes/ai-suggestions', {
         method: 'POST',
         headers: {

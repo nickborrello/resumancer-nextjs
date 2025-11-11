@@ -16,7 +16,7 @@ export default async function ResumeBuilderPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#0f0a1a] to-[#0a0a0a] pt-24 px-6 pb-12">
+      <div className="container mx-auto p-6 pt-24 space-y-6 max-w-4xl">
         <ResumeBuilderClient credits={credits} />
       </div>
     </>
