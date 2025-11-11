@@ -30,8 +30,8 @@ declare module "next-auth" {
       credits: number
       /** User's subscription tier (free, pro, etc.) */
       subscriptionTier: string
-      /** Email verification status from backend */
-      emailVerified?: boolean
+      /** Email verification timestamp from backend */
+      emailVerified: Date | null
     }
   }
 

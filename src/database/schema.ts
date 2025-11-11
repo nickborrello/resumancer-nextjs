@@ -101,17 +101,20 @@ export const verificationTokens = sqliteTable(
  */
 export const profiles = sqliteTable("profiles", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("userId")
+  userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .unique()
     .notNull(),
-  fullName: text("full_name"),
+  // Personal Info
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   email: text("email"),
-  phone: text("phone"),
+  phoneNumber: text("phone_number"),
   location: text("location"),
-  linkedin: text("linkedin"),
-  github: text("github"),
-  portfolio: text("portfolio"),
+  address: text("address"),
+  address2: text("address2"),
+  postalCode: text("postal_code"),
+  isPrimary: integer("is_primary", { mode: "boolean" }).default(true),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
@@ -124,12 +127,13 @@ export const profiles = sqliteTable("profiles", {
 export const experiences = sqliteTable("experiences", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
-  position: text("position").notNull(),
+  position: text("position_title").notNull(),
   company: text("company").notNull(),
   location: text("location"),
+  experienceType: text("experience_type"), // Full-time, Part-time, Internship, Contract, Freelance
   startDate: text("start_date"),
   endDate: text("end_date"),
-  current: integer("current", { mode: "boolean" }).default(false),
+  current: integer("currently_work_here", { mode: "boolean" }).default(false),
   description: text("description"), // JSON string
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
@@ -143,14 +147,14 @@ export const experiences = sqliteTable("experiences", {
 export const education = sqliteTable("education", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
-  institution: text("institution").notNull(),
+  institution: text("school_name").notNull(),
   major: text("major"),
-  degree: text("degree"),
+  degree: text("degree_type"),
   gpa: text("gpa"),
   startDate: text("start_date"),
   endDate: text("end_date"),
-  current: integer("current", { mode: "boolean" }).default(false),
-  description: text("description"), // JSON string
+  current: integer("currently_attending", { mode: "boolean" }).default(false),
+  coursework: text("coursework"), // JSON string
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
@@ -163,14 +167,15 @@ export const education = sqliteTable("education", {
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  description: text("description"),
-  link: text("link"),
-  github: text("github"),
-  technologies: text("technologies"), // JSON string
+  name: text("project_name").notNull(),
+  location: text("location"),
+  position: text("position_title"),
   startDate: text("start_date"),
   endDate: text("end_date"),
-  current: integer("current", { mode: "boolean" }).default(false),
+  current: integer("currently_working_on", { mode: "boolean" }).default(false),
+  description: text("description"), // JSON string
+  link: text("link"),
+  technologies: text("technologies"), // JSON string
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
@@ -178,13 +183,14 @@ export const projects = sqliteTable("projects", {
 /**
  * Skills Table
  *
- * Stores skills, organized by categories.
+ * Stores skills as a JSON array for each profile.
  */
 export const skills = sqliteTable("skills", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
-  category: text("category").notNull(),
-  skills: text("skills").notNull(), // JSON string
+  profileId: text("profile_id")
+    .references(() => profiles.id, { onDelete: "cascade" })
+    .unique(),
+  skills: text("skills").notNull(), // JSON array of skill strings
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
@@ -201,7 +207,9 @@ export const resumes = sqliteTable("resumes", {
   title: text("title").notNull(),
   jobDescription: text("job_description"),
   resumeData: text("resume_data").notNull(), // JSON string
+  mode: text("mode").default("ai"), // 'ai' or 'demo'
   metadata: text("metadata"), // JSON string
+  lastOpenedAt: integer("last_opened_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
@@ -242,15 +250,125 @@ export const payments = sqliteTable("payments", {
 });
 
 /**
+ * Password Reset Tokens Table
+ *
+ * Used for password reset functionality.
+ */
+export const passwordResetTokens = sqliteTable("password_reset_tokens", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  used: integer("used", { mode: "boolean" }).default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
+ * Portfolio Links Table
+ *
+ * Stores portfolio and social media links.
+ */
+export const portfolioLinks = sqliteTable("portfolio_links", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }).unique(),
+  linkedin: text("linkedin"),
+  portfolio: text("portfolio"),
+  github: text("github"),
+  otherUrl: text("other_url"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
+ * Languages Table
+ *
+ * Stores language proficiencies.
+ */
+export const languages = sqliteTable("languages", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
+  language: text("language").notNull(),
+  proficiency: text("proficiency"), // Native, Fluent, Professional, Intermediate, Basic
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
+ * Certifications Table
+ *
+ * Stores professional certifications.
+ */
+export const certifications = sqliteTable("certifications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
+  certificationName: text("certification_name").notNull(),
+  issuer: text("issuer"),
+  dateReceived: text("date_received"),
+  expirationDate: text("expiration_date"),
+  credentialId: text("credential_id"),
+  verificationUrl: text("verification_url"),
+  description: text("description"), // JSON string
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
+ * Awards Table
+ *
+ * Stores awards and honors.
+ */
+export const awards = sqliteTable("awards", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
+  awardName: text("award_name").notNull(),
+  issuer: text("issuer"),
+  dateReceived: text("date_received"),
+  description: text("description"), // JSON string
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
+ * Volunteer Experience Table
+ *
+ * Stores volunteer work experience.
+ */
+export const volunteer = sqliteTable("volunteer", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  profileId: text("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
+  organization: text("organization").notNull(),
+  role: text("role").notNull(),
+  location: text("location"),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
+  current: integer("currently_volunteering", { mode: "boolean" }).default(false),
+  description: text("description"), // JSON string
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
+ * API Usage Table
+ *
+ * Tracks API usage for billing and analytics.
+ */
+export const apiUsage = sqliteTable("api_usage", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull(),
+  tokensUsed: integer("tokens_used"),
+  cost: text("cost"), // Store as string for decimal precision
+  success: integer("success", { mode: "boolean" }).notNull(),
+  errorMessage: text("error_message"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+/**
  * Credit Packages Table
  *
- * Defines the available credit packages for purchase.
+ * Defines available credit packages for purchase.
  */
 export const creditPackages = sqliteTable("credit_packages", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   credits: integer("credits").notNull(),
-  price: integer("price").notNull(), // Price in cents
+  price: integer("price").notNull(),
   currency: text("currency").default("usd"),
   stripePriceId: text("stripe_price_id"),
   isActive: integer("is_active", { mode: "boolean" }).default(true),

@@ -94,7 +94,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user.id = user.id
           session.user.credits = userData.credits ?? 0
           session.user.subscriptionTier = userData.subscriptionTier ?? "free"
-          session.user.emailVerified = userData.emailVerified ?? null
+          session.user.emailVerified = userData.emailVerified ? new Date(userData.emailVerified) : null
         } else {
           // User not found in database, log error and set defaults
           console.error(`User with id ${user.id} not found in database`)
