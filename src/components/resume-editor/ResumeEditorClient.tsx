@@ -12,9 +12,24 @@ import { ProfessionalSummarySection } from './ProfessionalSummarySection';
 import { AISuggestionsPanel } from './AISuggestionsPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Download, Eye, FileText, Sparkles } from 'lucide-react';
-import { ResumePreview } from '@/components/resume-preview/ResumePreview';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Save, Download, FileText, Sparkles } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import ResumePreview to avoid SSR issues with PDFViewer
+const ResumePreview = dynamic(
+  () => import('@/components/resume-preview/ResumePreview').then(mod => mod.ResumePreview),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="bg-slate-900/30 p-4 rounded-lg border border-purple-500/30 max-h-[calc(100vh-12rem)] overflow-y-auto overflow-x-hidden">
+        <div className="w-full h-full min-h-[600px] flex items-center justify-center">
+          <div className="text-slate-400">Loading PDF preview...</div>
+        </div>
+      </div>
+    )
+  }
+);
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { ResumeData, Resume } from '@/types/resume';
@@ -32,9 +47,9 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState('personal');
-  const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const [isDemoResume, setIsDemoResume] = useState(false);
 
   // Track the last saved data to prevent unnecessary saves
   const lastSavedDataRef = useRef<string | null>(null);
@@ -78,6 +93,12 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const getCurrentResumeData = useCallback(() => methods.getValues(), [methods]);
 
   const saveResume = useCallback(async (data: ResumeFormData) => {
+    // Don't save demo resumes - check synchronously
+    if (resumeId === 'test-resume-demo') {
+      console.log('ℹ️ Demo resume - changes not saved');
+      return;
+    }
+
     setIsSaving(true);
     try {
       // Save to backend first (primary storage)
@@ -112,6 +133,10 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   // Load resume data on mount
   useEffect(() => {
     const loadResume = async () => {
+      // Check if this is a demo resume
+      const isDemo = resumeId === 'test-resume-demo';
+      setIsDemoResume(isDemo);
+
       // 1. If initialData is provided, use it.
       if (initialData) {
         methods.reset({
@@ -139,12 +164,12 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
         if (response.ok) {
           const resumeData = await response.json();
           methods.reset({
-            personalInfo: resumeData.personalInfo,
-            professionalSummary: resumeData.professionalSummary,
-            education: resumeData.education,
-            experiences: resumeData.experiences,
-            projects: resumeData.projects,
-            skills: resumeData.skills,
+            personalInfo: resumeData.resumeData?.personalInfo || resumeData.personalInfo,
+            professionalSummary: resumeData.resumeData?.professionalSummary || resumeData.professionalSummary,
+            education: resumeData.resumeData?.education || resumeData.education,
+            experiences: resumeData.resumeData?.experiences || resumeData.experiences,
+            projects: resumeData.resumeData?.projects || resumeData.projects,
+            skills: resumeData.resumeData?.skills || resumeData.skills,
           });
           setLastSaved(new Date(resumeData.updatedAt || resumeData.createdAt));
           console.log('✅ Resume loaded from backend');
@@ -174,7 +199,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   }, [resumeId, initialData, methods]); // Add `methods` to the dependency array
 
   useEffect(() => {
-    if (debouncedData) {
+    if (debouncedData && resumeId !== 'test-resume-demo') {
       // Only save if the data has actually changed
       const currentDataString = JSON.stringify(debouncedData);
       if (lastSavedDataRef.current !== currentDataString) {
@@ -182,7 +207,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
         saveResume(debouncedData);
       }
     }
-  }, [debouncedData, saveResume]);
+  }, [debouncedData, saveResume, resumeId]);
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
@@ -190,8 +215,29 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
       // Get current form data
       const currentData = methods.getValues();
       
+      // Transform form data to ResumeData format for PDF generation
+      const resumeData: ResumeData = {
+        personalInfo: currentData.personalInfo,
+        professionalSummary: currentData.professionalSummary || '',
+        experiences: (currentData.experiences || []).map(exp => ({
+          ...exp,
+          isCurrent: exp.isCurrent || false,
+          bulletPoints: exp.bulletPoints || [],
+        })),
+        education: (currentData.education || []).map(edu => ({
+          ...edu,
+          endDate: edu.endDate || '',
+        })),
+        projects: (currentData.projects || []).map(project => ({
+          ...project,
+          technologies: project.technologies || [],
+          bulletPoints: project.bulletPoints || [],
+        })),
+        skills: currentData.skills || [],
+      };
+      
       // Generate PDF blob
-      const pdfDocument = <ResumePDFDocument data={currentData as ResumeData} />;
+      const pdfDocument = <ResumePDFDocument data={resumeData} />;
       const blob = await pdf(pdfDocument).toBlob();
       
       // Create filename from personal info or use default
@@ -211,7 +257,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     }
   };
 
-  const handleApplySuggestion = (suggestion: any) => {
+  const handleApplySuggestion = (suggestion: { section: string; suggested: string }) => {
     // This is a simplified implementation
     // In a full implementation, you would parse the suggestion and update the specific field
     console.log('✅ Applying suggestion:', suggestion);
@@ -221,19 +267,36 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   };
 
   const onSubmit = async (data: ResumeFormData) => {
-    await saveResume(data);
+    if (resumeId !== 'test-resume-demo') {
+      await saveResume(data);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-              {mode === 'create' ? 'Create Resume' : 'Edit Resume'}
+              {mode === 'create' ? 'Create Resume' : isDemoResume ? 'Demo Resume (Read-Only)' : 'Edit Resume'}
             </h1>
             <p className="text-slate-400 mt-2">
-              {isSaving ? (<span className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />Saving...</span>) : lastSaved ? (<span className="flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-full bg-green-400" />Last saved {lastSaved.toLocaleTimeString()}</span>) : 'All changes are automatically saved'}
+              {isDemoResume ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full bg-blue-400" />
+                  Demo resume - changes are not saved. Create a new resume to save your edits.
+                </span>
+              ) : isSaving ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
+                  Saving...
+                </span>
+              ) : lastSaved ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
+                  Last saved {lastSaved.toLocaleTimeString()}
+                </span>
+              ) : 'All changes are automatically saved'}
             </p>
           </div>
           <div className="flex gap-3">
@@ -248,15 +311,6 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
             </Button>
             <Button 
               type="button" 
-              variant="outline" 
-              onClick={() => setShowPreview(!showPreview)}
-              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              {showPreview ? 'Hide' : 'Show'} Preview
-            </Button>
-            <Button 
-              type="button" 
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
@@ -268,49 +322,48 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
         </div>
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className={`grid gap-6 ${
-            showPreview && showAISuggestions ? 'grid-cols-1 lg:grid-cols-3' : 
-            (showPreview || showAISuggestions) ? 'grid-cols-1 lg:grid-cols-2' : 
-            'grid-cols-1'
+            showAISuggestions ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1 lg:grid-cols-2'
           }`}>
             <div className="space-y-6">
-              <Card className="bg-slate-900/50 border-purple-500/30">
+              <Card className="bg-slate-900/50 border-purple-500/30 max-h-[calc(100vh-16rem)] overflow-y-auto">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <div className="border-b border-slate-700 px-6">
-                    <TabsList className="bg-transparent">
-                      <TabsTrigger value="personal" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300"><FileText className="h-4 w-4 mr-2" />Personal</TabsTrigger>
-                      <TabsTrigger value="summary" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Summary</TabsTrigger>
-                      <TabsTrigger value="experience" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Experience</TabsTrigger>
-                      <TabsTrigger value="education" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Education</TabsTrigger>
-                      <TabsTrigger value="projects" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Projects</TabsTrigger>
-                      <TabsTrigger value="skills" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Skills</TabsTrigger>
-                    </TabsList>
-                  </div>
+                  <TabsList className="bg-transparent border-b border-slate-700 px-6 sticky top-0 z-10">
+                    <TabsTrigger value="personal" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300"><FileText className="h-4 w-4 mr-2" />Personal</TabsTrigger>
+                    <TabsTrigger value="summary" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Summary</TabsTrigger>
+                    <TabsTrigger value="experience" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Experience</TabsTrigger>
+                    <TabsTrigger value="education" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Education</TabsTrigger>
+                    <TabsTrigger value="projects" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Projects</TabsTrigger>
+                    <TabsTrigger value="skills" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Skills</TabsTrigger>
+                  </TabsList>
                   <div className="p-6">
-                    <TabsContent value="personal" className="mt-0"><PersonalInfoSection /></TabsContent>
-                    <TabsContent value="summary" className="mt-0"><ProfessionalSummarySection /></TabsContent>
-                    <TabsContent value="experience" className="mt-0"><ExperienceSection /></TabsContent>
-                    <TabsContent value="education" className="mt-0"><EducationSection /></TabsContent>
-                    <TabsContent value="projects" className="mt-0"><ProjectsSection /></TabsContent>
-                    <TabsContent value="skills" className="mt-0"><SkillsSection /></TabsContent>
+                    {activeTab === 'personal' && <PersonalInfoSection />}
+                    {activeTab === 'summary' && <ProfessionalSummarySection />}
+                    {activeTab === 'experience' && <ExperienceSection />}
+                    {activeTab === 'education' && <EducationSection />}
+                    {activeTab === 'projects' && <ProjectsSection />}
+                    {activeTab === 'skills' && <SkillsSection />}
                   </div>
                 </Tabs>
               </Card>
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSaving} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"><Save className="h-4 w-4 mr-2" />{isSaving ? 'Saving...' : 'Save Changes'}</Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSaving || isDemoResume} 
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isDemoResume ? 'Demo - Read Only' : isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
               </div>
             </div>
-            {showPreview && (
-              <div>
-                <div className="sticky top-8">
-                  <h3 className="text-lg font-semibold text-purple-300 mb-4">Live Preview</h3>
-                  <div className="bg-slate-900/30 p-4 rounded-lg border border-purple-500/30 max-h-[calc(100vh-12rem)] overflow-y-auto">
-                    <div className="scale-[0.65] origin-top-left w-[154%]">
-                      <ResumePreview />
-                    </div>
-                  </div>
+            <Card className="bg-slate-900/50 border-purple-500/30">
+              <div className="sticky">
+                <h3 className="text-lg font-semibold text-purple-300 mb-4 px-6">Live Preview</h3>
+                <div className="p-2 mx-6 rounded-lg border border-purple-500/30 overflow-y-auto overflow-x-hidden">
+                  <ResumePreview />
                 </div>
               </div>
-            )}
+            </Card>
             {showAISuggestions && (
               <div>
                 <div className="sticky top-8">

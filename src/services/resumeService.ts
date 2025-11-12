@@ -174,73 +174,71 @@ Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') 
     // Start with base profile data - DO NOT automatically apply AI suggestions
     const optimizedResume: any = {
       personalInfo: {
-        firstName: profile.firstName || profile.first_name || "",
-        lastName: profile.lastName || profile.last_name || "",
+        fullName: profile.firstName && profile.lastName
+          ? `${profile.firstName} ${profile.lastName}`
+          : profile.firstName || profile.last_name || "",
         email: profile.email || "",
-        phoneNumber: profile.phoneNumber || profile.phone_number || "",
+        phone: profile.phoneNumber || profile.phone_number || "",
         location: profile.location || "",
         linkedin: profile.linkedin || "",
         github: profile.github || "",
         portfolio: profile.portfolio || "",
-        otherUrl: profile.otherUrl || profile.other_url || "",
       },
       experiences: (profile.experiences || []).map((exp: any) => ({
-        id: exp.id,
-        positionTitle: exp.positionTitle || exp.position_title || "",
+        id: exp.id || `exp-${Math.random().toString(36).substr(2, 9)}`,
         company: exp.company || "",
+        jobTitle: exp.positionTitle || exp.position_title || "",
         location: exp.location || "",
-        experienceType: exp.experienceType || exp.experience_type || "",
         startDate: exp.startDate || exp.start_date || "",
         endDate: exp.endDate || exp.end_date || "",
-        currentlyWorkHere:
-          exp.currentlyWorkHere || exp.currently_work_here || false,
-        description: exp.description || "",
+        isCurrent: exp.currentlyWorkHere || exp.currently_work_here || false,
+        bulletPoints: Array.isArray(exp.description)
+          ? exp.description.map((desc: string, index: number) => ({
+              id: `bullet-exp-${exp.id || 'temp'}-${index}`,
+              content: desc
+            }))
+          : exp.description
+            ? [{ id: `bullet-exp-${exp.id || 'temp'}-0`, content: exp.description }]
+            : []
       })),
       projects: (aiOptimization.selectedProjectIndexes || [])
         .filter((index: number) => index >= 0 && index < (profile.projects || []).length)
         .map((index: number) => {
           const proj = profile.projects[index];
           return {
-            id: proj.id,
-            projectName: proj.projectName || proj.project_name || "",
-            positionTitle: proj.positionTitle || proj.position_title || "",
-            location: proj.location || "",
-            startDate: proj.startDate || proj.start_date || "",
-            endDate: proj.endDate || proj.end_date || "",
-            currentlyWorkingOn:
-              proj.currentlyWorkingOn || proj.currently_working_on || false,
-            description: proj.description || "",
+            id: proj.id || `proj-${Math.random().toString(36).substr(2, 9)}`,
+            name: proj.projectName || proj.project_name || "",
             link: proj.link || "",
             technologies: proj.technologies || [],
+            bulletPoints: Array.isArray(proj.description)
+              ? proj.description.map((desc: string, bulletIndex: number) => ({
+                  id: `bullet-proj-${proj.id || 'temp'}-${bulletIndex}`,
+                  content: desc
+                }))
+              : proj.description
+                ? [{ id: `bullet-proj-${proj.id || 'temp'}-0`, content: proj.description }]
+                : []
           };
         }),
       skills: this.categorizeSkillsForResume(profile.skills || []),
-      technicalSkills: this.categorizeSkillsForResume(profile.skills || []),
       education: (profile.education || []).map((edu: any) => ({
-        id: edu.id,
-        schoolName: edu.schoolName || edu.school_name || "",
-        major: edu.major || "",
-        degreeType: edu.degreeType || edu.degree_type || "",
-        gpa: edu.gpa || "",
+        id: edu.id || `edu-${Math.random().toString(36).substr(2, 9)}`,
+        school: edu.schoolName || edu.school_name || "",
+        degree: edu.degreeType || edu.degree_type || "",
+        fieldOfStudy: edu.major || "",
+        location: edu.location || "",
         startDate: edu.startDate || edu.start_date || "",
         endDate: edu.endDate || edu.end_date || "",
-        currentlyAttending:
-          edu.currentlyAttending || edu.currently_attending || false,
-        coursework: edu.coursework || [],
+        gpa: edu.gpa || "",
       })),
       certifications: (profile.certifications || []).map((cert: any) => ({
-        id: cert.id,
-        certificationName:
-          cert.certificationName || cert.certification_name || "",
-        issuingOrganization:
-          cert.issuingOrganization || cert.issuing_organization || "",
-        issueDate: cert.issueDate || cert.issue_date || "",
-        expirationDate: cert.expirationDate || cert.expiration_date || "",
+        id: cert.id || `cert-${Math.random().toString(36).substr(2, 9)}`,
+        name: cert.certificationName || cert.certification_name || "",
+        issuingOrganization: cert.issuingOrganization || cert.issuing_organization || "",
+        dateObtained: cert.issueDate || cert.issue_date || "",
         credentialId: cert.credentialId || cert.credential_id || "",
-        credentialUrl: cert.credentialUrl || cert.credential_url || "",
       })),
-      professionalSummary:
-        profile.professionalSummary || profile.professional_summary || "",
+      professionalSummary: profile.professionalSummary || profile.professional_summary || "",
       optimizationNotes: {
         mode: "openrouter",
         provider: "multiple",
@@ -264,279 +262,157 @@ Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') 
 
     return {
       personalInfo: {
-        firstName: "Alex",
-        lastName: "Thompson",
-        email: "alex.thompson@email.com",
-        phoneNumber: "+1 (555) 123-4567",
-        location: "San Francisco, CA, USA",
-        linkedin: "linkedin.com/in/alexthompson",
-        github: "github.com/alexthompson",
-        portfolio: "alexthompson.dev",
-        otherUrl: "",
+        fullName: "Alex Johnson",
+        email: "alex.johnson@email.com",
+        phone: "+1 (555) 123-4567",
+        location: "San Francisco, CA",
+        linkedin: "linkedin.com/in/alexjohnsondev",
+        github: "github.com/alexjohnson",
+        portfolio: "alexjohnson.dev"
       },
+      professionalSummary: "Results-driven Full-Stack Developer with 5+ years of experience in building and maintaining scalable web applications using React, Node.js, and PostgreSQL. Proven ability to lead projects from concept to deployment. Seeking to leverage my skills in a challenging role at a growth-oriented company.",
       experiences: [
         {
           id: "exp-1",
-          positionTitle: "Senior Software Engineer",
-          company: "TechCorp Solutions",
-          location: "San Francisco, CA, USA",
-          experienceType: "Full-time",
-          startDate: "2022-03-01",
-          endDate: "",
-          currentlyWorkHere: true,
-          description: [
-            "Led development of microservices architecture serving 500K+ users, improving system reliability by 40%",
-            "Implemented CI/CD pipelines using Jenkins and Docker, reducing deployment time from 2 hours to 15 minutes",
-            "Mentored junior developers and conducted code reviews, improving team code quality metrics by 25%"
-          ],
+          company: "TechSolutions Inc.",
+          jobTitle: "Senior Software Engineer",
+          location: "Remote",
+          startDate: "2021-01-01",
+          endDate: null,
+          isCurrent: true,
+          bulletPoints: [
+            {
+              id: "bullet-exp-1-1",
+              content: "Led the development of a new microservices-based architecture, improving system scalability by 40%."
+            },
+            {
+              id: "bullet-exp-1-2",
+              content: "Mentored 3 junior developers, conducting code reviews and fostering best practices in TypeScript and React."
+            },
+            {
+              id: "bullet-exp-1-3",
+              content: "Integrated Stripe for payment processing and Sentry for real-time error monitoring."
+            }
+          ]
         },
         {
           id: "exp-2",
-          positionTitle: "Software Engineer",
-          company: "StartupXYZ",
-          location: "Austin, TX, USA",
-          experienceType: "Full-time",
-          startDate: "2020-06-01",
-          endDate: "2022-02-28",
-          currentlyWorkHere: false,
-          description: [
-            "Built responsive React applications with TypeScript, increasing user engagement by 35%",
-            "Designed and implemented RESTful APIs using Node.js and Express, handling 10K+ requests per minute",
-            "Collaborated with cross-functional teams using Agile methodologies to deliver features ahead of schedule"
-          ],
-        },
-        {
-          id: "exp-3",
-          positionTitle: "Junior Developer",
-          company: "WebDev Agency",
-          location: "Remote",
-          experienceType: "Full-time",
-          startDate: "2019-01-01",
-          endDate: "2020-05-31",
-          currentlyWorkHere: false,
-          description: [
-            "Developed custom WordPress themes and plugins for client websites, improving load times by 50%",
-            "Maintained and optimized MySQL databases, ensuring 99.9% uptime for client applications",
-            "Implemented SEO best practices, increasing organic traffic by 60% for key clients"
-          ],
-        },
-      ],
-      projects: [
-        {
-          id: "proj-1",
-          projectName: "E-Commerce Platform",
-          positionTitle: "",
-          location: "",
-          startDate: "",
-          endDate: "",
-          currentlyWorkingOn: false,
-          description: [
-            "Developed a full-stack e-commerce platform using React, Node.js, and PostgreSQL",
-            "Implemented secure payment processing with Stripe API, real-time inventory management, and responsive design",
-            "Features include user authentication, shopping cart, order tracking, and admin dashboard",
-            "Deployed on AWS with 99.9% uptime and handling 50K+ monthly transactions"
-          ],
-          link: "github.com/alexthompson/ecommerce-platform",
-          technologies: ["React", "Node.js", "PostgreSQL", "Stripe API", "AWS", "Docker"],
-        },
-        {
-          id: "proj-2",
-          projectName: "Task Management App",
-          positionTitle: "",
-          location: "",
-          startDate: "",
-          endDate: "",
-          currentlyWorkingOn: false,
-          description: [
-            "Built a collaborative task management application with real-time updates using Socket.io",
-            "Implemented drag-and-drop functionality, team collaboration features, and progress tracking",
-            "Created RESTful API with JWT authentication and role-based access control",
-            "Features include project boards, time tracking, file attachments, and email notifications"
-          ],
-          link: "github.com/alexthompson/taskmanager",
-          technologies: ["React", "Express.js", "MongoDB", "Socket.io", "JWT", "Material-UI"],
-        },
-        {
-          id: "proj-3",
-          projectName: "Data Visualization Dashboard",
-          positionTitle: "",
-          location: "",
-          startDate: "",
-          endDate: "",
-          currentlyWorkingOn: false,
-          description: [
-            "Created an interactive data visualization dashboard using D3.js and React",
-            "Integrated with multiple APIs to aggregate and display real-time data from various sources",
-            "Implemented advanced charting capabilities, filtering options, and export functionality",
-            "Dashboard processes 1M+ data points daily and provides insights for business decision-making"
-          ],
-          link: "github.com/alexthompson/data-dashboard",
-          technologies: ["React", "D3.js", "Python", "Flask", "PostgreSQL", "Chart.js"],
-        },
-        {
-          id: "proj-4",
-          projectName: "Mobile Fitness App",
-          positionTitle: "",
-          location: "",
-          startDate: "",
-          endDate: "",
-          currentlyWorkingOn: false,
-          description: [
-            "Developed a cross-platform mobile fitness application using React Native",
-            "Features include workout tracking, progress monitoring, social sharing, and personalized workout recommendations",
-            "Integrated with health APIs for accurate data tracking and implemented offline functionality",
-            "App has 10K+ downloads with 4.8-star rating"
-          ],
-          link: "github.com/alexthompson/fitness-app",
-          technologies: ["React Native", "Firebase", "HealthKit", "Google Fit API", "Redux"],
-        },
-      ],
-      skills: [
-        {
-          category: "Programming Languages",
-          skills: ["JavaScript", "TypeScript", "Python"]
-        },
-        {
-          category: "Frameworks & Libraries",
-          skills: ["React", "Node.js", "Express.js"]
-        },
-        {
-          category: "Databases",
-          skills: ["PostgreSQL", "MongoDB", "Redis"]
-        },
-        {
-          category: "Cloud & DevOps",
-          skills: ["AWS", "Docker", "Kubernetes"]
-        },
-        {
-          category: "Tools & Testing",
-          skills: ["Git", "Jest", "Jenkins"]
+          company: "WebInnovate",
+          jobTitle: "Software Developer",
+          location: "Boston, MA",
+          startDate: "2019-06-01",
+          endDate: "2020-12-31",
+          isCurrent: false,
+          bulletPoints: [
+            {
+              id: "bullet-exp-2-1",
+              content: "Developed and maintained full-stack features for a client-facing SaaS platform using React and Express."
+            },
+            {
+              id: "bullet-exp-2-2",
+              content: "Wrote Playwright end-to-end tests, increasing test coverage from 60% to 95%."
+            }
+          ]
         }
       ],
       education: [
         {
           id: "edu-1",
-          schoolName: "University of California, Berkeley",
-          major: "Computer Science",
-          degreeType: "Bachelor of Science",
-          gpa: "3.7",
-          startDate: "2015-08-01",
-          endDate: "2019-05-31",
-          currentlyAttending: false,
-          coursework: ["Data Structures", "Algorithms", "Software Engineering", "Database Systems", "Web Development", "Machine Learning"],
+          school: "Northeastern University",
+          degree: "Master of Science",
+          fieldOfStudy: "Computer Science",
+          location: "Boston, MA",
+          startDate: "2017-09-01",
+          endDate: "2019-05-01",
+          gpa: "3.9/4.0"
+        }
+      ],
+      projects: [
+        {
+          id: "proj-1",
+          name: "Resumancer - AI Resume Builder",
+          link: "github.com/alexjohnson/resumancer",
+          technologies: ["Next.js", "TypeScript", "Drizzle ORM", "OpenRouter", "Stripe"],
+          bulletPoints: [
+            {
+              id: "bullet-proj-1-1",
+              content: "Built a full-stack resume application featuring an agentic AI co-pilot using the Vercel AI SDK."
+            },
+            {
+              id: "bullet-proj-1-2",
+              content: "Implemented a credit system and payment processing using Stripe webhooks."
+            }
+          ]
+        }
+      ],
+      skills: [
+        {
+          id: "skill-cat-1",
+          category: "Programming Languages",
+          list: ["JavaScript", "TypeScript", "Python", "SQL"]
         },
+        {
+          id: "skill-cat-2",
+          category: "Frameworks & Libraries",
+          list: ["React", "Next.js", "Node.js", "Express.js", "Drizzle ORM", "Tailwind CSS"]
+        },
+        {
+          id: "skill-cat-3",
+          category: "Databases",
+          list: ["PostgreSQL", "SQLite", "Redis"]
+        },
+        {
+          id: "skill-cat-4",
+          category: "Tools & Platforms",
+          list: ["Git", "Docker", "Sentry", "Playwright", "Vercel", "Railway"]
+        }
       ],
       certifications: [
         {
           id: "cert-1",
-          certificationName: "AWS Certified Solutions Architect",
+          name: "AWS Certified Cloud Practitioner",
           issuingOrganization: "Amazon Web Services",
-          issueDate: "2023-06-15",
-          expirationDate: "2026-06-15",
-          credentialId: "AWS-SAA-123456",
-          credentialUrl: "aws.amazon.com/verification",
+          dateObtained: "2023-03-01",
+          credentialId: "AWS-123456"
+        }
+      ],
+      awards: [
+        {
+          id: "award-1",
+          name: "TechSolutions Q4 Hackathon Winner",
+          organization: "TechSolutions Inc.",
+          dateReceived: "2023-12-15"
+        }
+      ],
+      volunteerExperience: [
+        {
+          id: "vol-1",
+          organization: "Code for America",
+          role: "Volunteer Developer",
+          location: "Remote",
+          startDate: "2022-01-01",
+          endDate: null,
+          isCurrent: true,
+          bulletPoints: [
+            {
+              id: "bullet-vol-1-1",
+              content: "Contribute to open-source civic tech projects to improve government services."
+            }
+          ]
+        }
+      ],
+      languages: [
+        {
+          id: "lang-1",
+          language: "English",
+          proficiency: "Native"
         },
         {
-          id: "cert-2",
-          certificationName: "Certified Scrum Master",
-          issuingOrganization: "Scrum Alliance",
-          issueDate: "2022-11-20",
-          expirationDate: "2025-11-20",
-          credentialId: "CSM-789012",
-          credentialUrl: "scrumalliance.org/verification",
-        },
-      ],
-      professionalSummary: "Experienced full-stack software engineer with 5+ years of expertise in building scalable web applications and leading development teams. Proficient in modern JavaScript frameworks, cloud platforms, and DevOps practices. Passionate about creating user-centric solutions that drive business value and improve developer experience.",
-      optimizationNotes: {
-        mode: "demo",
-        provider: "demo",
-        aiSuggestions: {
-          skillsAnalysis: {
-            missingSkills: [],
-            emphasizeSkills: [],
-            removeSkills: [],
-            suggestedSkills: {
-              "Programming Languages": ["Go", "Rust"],
-              "Frameworks & Libraries": ["Next.js", "GraphQL"],
-              "Databases": ["Elasticsearch"],
-              "Cloud & DevOps": ["Terraform", "DataDog"],
-              "Tools & Testing": ["Cypress", "Playwright"]
-            },
-            currentSkills: ["JavaScript", "TypeScript", "Python", "React", "Node.js", "Express.js", "PostgreSQL", "MongoDB", "Redis", "AWS", "Docker", "Kubernetes", "Git", "Jest", "Jenkins"],
-          },
-          projectOptimizations: [
-            {
-              projectId: 0,
-              bulletPointSuggestions: [
-                {
-                  bulletIndex: 0,
-                  originalBullet: "Developed a full-stack e-commerce platform using React, Node.js, and PostgreSQL",
-                  suggestedBullet: "Architected and developed a scalable e-commerce platform using React, Node.js, and PostgreSQL, handling 10K+ daily transactions with 99.9% uptime",
-                  keyImprovements: ["Added quantification (10K+ transactions, 99.9% uptime)", "Used stronger action verb (Architected vs. Developed)"]
-                },
-                {
-                  bulletIndex: 1,
-                  originalBullet: "Implemented secure payment processing with Stripe API, real-time inventory management, and responsive design",
-                  suggestedBullet: "Integrated Stripe API for secure payment processing, implemented real-time inventory management system, and created fully responsive design optimized for mobile and desktop",
-                  keyImprovements: ["Added specific technologies (Stripe API)", "Clarified scope (mobile and desktop)", "Used more precise language"]
-                }
-              ]
-            }
-          ],
-          projectSuggestions: [],
-          experienceOptimizations: [
-            {
-              experienceId: 0,
-              bulletPointSuggestions: [
-                {
-                  bulletIndex: 0,
-                  originalBullet: "Led development of microservices architecture serving 500K+ users, improving system reliability by 40%",
-                  suggestedBullet: "Led cross-functional team of 8 engineers in developing microservices architecture serving 500K+ users, improving system reliability by 40% and reducing deployment time by 60%",
-                  keyImprovements: ["Added team size quantification (8 engineers)", "Added additional metric (60% deployment time reduction)", "Specified cross-functional aspect"]
-                },
-                {
-                  bulletIndex: 1,
-                  originalBullet: "Implemented CI/CD pipelines using Jenkins and Docker, reducing deployment time from 2 hours to 15 minutes",
-                  suggestedBullet: "Designed and implemented comprehensive CI/CD pipelines using Jenkins and Docker, reducing deployment time from 2 hours to 15 minutes and eliminating manual deployment errors",
-                  keyImprovements: ["Used stronger action verb (Designed vs. Implemented)", "Added outcome (eliminating manual errors)", "Emphasized comprehensiveness"]
-                }
-              ]
-            },
-            {
-              experienceId: 1,
-              bulletPointSuggestions: [
-                {
-                  bulletIndex: 0,
-                  originalBullet: "Built responsive React applications with TypeScript, increasing user engagement by 35%",
-                  suggestedBullet: "Developed responsive React applications with TypeScript and Redux, increasing user engagement by 35% and improving mobile performance scores by 25 points",
-                  keyImprovements: ["Added specific technologies (Redux)", "Added additional metric (25 point performance improvement)", "Quantified performance impact"]
-                }
-              ]
-            }
-          ],
-          experienceSuggestions: [],
-          professionalSummarySuggestion: "Experienced full-stack software engineer with 5+ years of expertise in building scalable web applications and leading development teams. Proficient in modern JavaScript frameworks, cloud platforms, and DevOps practices. Passionate about creating user-centric solutions that drive business value and improve developer experience.",
-          professionalSummaryImprovements: [
-            "More directly addresses the '5+ years of experience' from the job description.",
-            "Uses stronger, more confident language."
-          ],
-          educationSuggestions: [
-            {
-              educationIndex: 0,
-              suggestions: [
-                "Consider adding relevant coursework if it aligns with keywords from the job description (e.g., 'Machine Learning', 'Database Systems')."
-              ]
-            }
-          ],
-          overallSuggestions: ["Consider highlighting leadership experience and quantifiable achievements"],
-          keywordSuggestions: ["full-stack developer", "React", "Node.js", "AWS", "microservices"],
-          atsOptimization: {
-            recommendedKeywords: ["software engineer", "full-stack", "JavaScript", "React", "AWS"],
-            formattingTips: ["Use action verbs at the beginning of bullet points", "Include specific metrics and outcomes"],
-          },
-        },
-        projectsSelected: 4,
-      },
+          id: "lang-2",
+          language: "Spanish",
+          proficiency: "Conversational"
+        }
+      ]
     };
   }
 
@@ -545,14 +421,22 @@ Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') 
 
     // If skills are already in the correct categorized format, return as is
     if (Array.isArray(skills) && skills.length > 0 && skills[0] && typeof skills[0] === 'object' && 'category' in skills[0] && 'skills' in skills[0]) {
-      console.log('Already in correct format');
-      return skills;
+      // Convert old format to new format
+      return skills.map((skillCat, index) => ({
+        id: skillCat.id || `skill-cat-${index + 1}`,
+        category: skillCat.category,
+        list: skillCat.skills || []
+      }));
     }
 
     // Handle double-nested structure: skills: [{ skills: [{ category: "...", skills: [...] }] }]
     if (Array.isArray(skills) && skills.length > 0 && skills[0] && typeof skills[0] === 'object' && 'skills' in skills[0] && Array.isArray(skills[0].skills)) {
       console.log('Double-nested structure detected, returning skills[0].skills');
-      return skills[0].skills;
+      return skills[0].skills.map((skillCat: any, index: number) => ({
+        id: skillCat.id || `skill-cat-${index + 1}`,
+        category: skillCat.category,
+        list: skillCat.skills || []
+      }));
     }
 
     // If skills are a flat array, categorize them
@@ -560,22 +444,22 @@ Technologies: ${Array.isArray(proj.technologies) ? proj.technologies.join(', ') 
       console.log('Categorizing flat array');
       const categories = this.categorizeSkills(skills);
       return [
-        { category: "Programming Languages", skills: categories['programmingLanguages'] },
-        { category: "Frameworks & Libraries", skills: categories['frameworks'] },
-        { category: "Databases", skills: categories['databases'] },
-        { category: "Cloud & DevOps", skills: categories['cloud'] },
-        { category: "Tools & Testing", skills: categories['tools'] }
-      ].filter(cat => cat.skills && cat.skills.length > 0);
+        { id: "skill-cat-1", category: "Programming Languages", list: categories['programmingLanguages'] },
+        { id: "skill-cat-2", category: "Frameworks & Libraries", list: categories['frameworks'] },
+        { id: "skill-cat-3", category: "Databases", list: categories['databases'] },
+        { id: "skill-cat-4", category: "Cloud & DevOps", list: categories['cloud'] },
+        { id: "skill-cat-5", category: "Tools & Testing", list: categories['tools'] }
+      ].filter(cat => cat.list && cat.list.length > 0);
     }
 
     console.log('Default empty categories');
     // Default empty categories if no skills
     return [
-      { category: "Programming Languages", skills: [] },
-      { category: "Frameworks & Libraries", skills: [] },
-      { category: "Databases", skills: [] },
-      { category: "Cloud & DevOps", skills: [] },
-      { category: "Tools & Testing", skills: [] }
+      { id: "skill-cat-1", category: "Programming Languages", list: [] },
+      { id: "skill-cat-2", category: "Frameworks & Libraries", list: [] },
+      { id: "skill-cat-3", category: "Databases", list: [] },
+      { id: "skill-cat-4", category: "Cloud & DevOps", list: [] },
+      { id: "skill-cat-5", category: "Tools & Testing", list: [] }
     ];
   }
 

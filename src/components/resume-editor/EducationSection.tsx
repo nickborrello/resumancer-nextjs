@@ -3,7 +3,6 @@
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
@@ -24,13 +23,12 @@ export function EducationSection() {
   const addEducation = () => {
     append({
       id: crypto.randomUUID(),
-      institution: '',
+      school: '',
       degree: '',
-      field: '',
+      fieldOfStudy: '',
       startDate: '',
       endDate: '',
       gpa: '',
-      description: '',
     });
   };
 
@@ -85,17 +83,17 @@ export function EducationSection() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor={`education.${index}.institution`} className="text-slate-200">
-                  Institution <span className="text-red-400">*</span>
+                <Label htmlFor={`education.${index}.school`} className="text-slate-200">
+                  School <span className="text-red-400">*</span>
                 </Label>
                 <Input
-                  {...register(`education.${index}.institution`)}
+                  {...register(`education.${index}.school`)}
                   placeholder="University of California, Berkeley"
                   className="bg-slate-800 border-slate-700 text-slate-100"
                 />
-                {errors.education?.[index]?.institution && (
+                {errors.education?.[index]?.school && (
                   <p className="text-sm text-red-400">
-                    {errors.education[index]?.institution?.message}
+                    {errors.education[index]?.school?.message}
                   </p>
                 )}
               </div>
@@ -117,17 +115,17 @@ export function EducationSection() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`education.${index}.field`} className="text-slate-200">
+                <Label htmlFor={`education.${index}.fieldOfStudy`} className="text-slate-200">
                   Field of Study <span className="text-red-400">*</span>
                 </Label>
                 <Input
-                  {...register(`education.${index}.field`)}
+                  {...register(`education.${index}.fieldOfStudy`)}
                   placeholder="Computer Science"
                   className="bg-slate-800 border-slate-700 text-slate-100"
                 />
-                {errors.education?.[index]?.field && (
+                {errors.education?.[index]?.fieldOfStudy && (
                   <p className="text-sm text-red-400">
-                    {errors.education[index]?.field?.message}
+                    {errors.education[index]?.fieldOfStudy?.message}
                   </p>
                 )}
               </div>
@@ -166,18 +164,6 @@ export function EducationSection() {
                 <Input
                   {...register(`education.${index}.gpa`)}
                   placeholder="3.8/4.0"
-                  className="bg-slate-800 border-slate-700 text-slate-100"
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor={`education.${index}.description`} className="text-slate-200">
-                  Description
-                </Label>
-                <Textarea
-                  {...register(`education.${index}.description`)}
-                  placeholder="Relevant coursework, honors, activities..."
-                  rows={3}
                   className="bg-slate-800 border-slate-700 text-slate-100"
                 />
               </div>

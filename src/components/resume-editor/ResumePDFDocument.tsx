@@ -1,117 +1,115 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Link } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { ResumeData } from '@/types/resume';
+import { resumeTheme } from '../resume-preview/resume-theme';
 
-// Define styles for the PDF
+// Create react-pdf styles by referencing the same theme object
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    fontSize: 11,
-    fontFamily: 'Helvetica',
-    backgroundColor: '#FFFFFF',
+    padding: resumeTheme.spacing.xlarge,
+    fontSize: resumeTheme.fontSize.body,
+    fontFamily: resumeTheme.fontFamily,
+    backgroundColor: resumeTheme.colors.background,
+    color: resumeTheme.colors.text,
   },
   header: {
-    marginBottom: 20,
-    borderBottom: '2 solid #2563eb',
-    paddingBottom: 10,
+    marginBottom: resumeTheme.spacing.xlarge,
+    borderBottom: `2 solid ${resumeTheme.colors.primary}`,
+    paddingBottom: resumeTheme.spacing.medium,
   },
   name: {
-    fontSize: 24,
+    fontSize: resumeTheme.fontSize.heading,
     fontWeight: 'bold',
-    color: '#1e40af',
-    marginBottom: 8,
+    color: resumeTheme.colors.primary,
+    marginBottom: resumeTheme.spacing.small,
   },
   contactInfo: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    fontSize: 10,
-    color: '#4b5563',
-    gap: 12,
+    fontSize: resumeTheme.fontSize.body,
+    color: resumeTheme.colors.subtleText,
+    gap: resumeTheme.spacing.medium,
   },
   contactItem: {
     marginRight: 12,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: resumeTheme.spacing.xlarge,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: resumeTheme.fontSize.subheading,
     fontWeight: 'bold',
-    color: '#1e40af',
-    marginBottom: 8,
+    color: resumeTheme.colors.primary,
+    marginBottom: resumeTheme.spacing.small,
     textTransform: 'uppercase',
-    borderBottom: '1 solid #e5e7eb',
-    paddingBottom: 4,
+    borderBottom: `1 solid ${resumeTheme.colors.border}`,
+    paddingBottom: resumeTheme.spacing.small,
   },
   subsection: {
-    marginBottom: 12,
+    marginBottom: resumeTheme.spacing.medium,
   },
   subsectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: resumeTheme.spacing.small,
   },
   subsectionTitle: {
-    fontSize: 12,
+    fontSize: resumeTheme.fontSize.body,
     fontWeight: 'bold',
-    color: '#111827',
+    color: resumeTheme.colors.text,
   },
   subsectionSubtitle: {
-    fontSize: 10,
-    color: '#4b5563',
+    fontSize: resumeTheme.fontSize.body,
+    color: resumeTheme.colors.subtleText,
     fontStyle: 'italic',
-    marginBottom: 2,
+    marginBottom: resumeTheme.spacing.small,
   },
   date: {
-    fontSize: 10,
-    color: '#6b7280',
+    fontSize: resumeTheme.fontSize.body,
+    color: resumeTheme.colors.subtleText,
   },
   bulletPoint: {
     flexDirection: 'row',
-    marginBottom: 3,
-    paddingLeft: 12,
+    marginBottom: resumeTheme.spacing.small,
+    paddingLeft: resumeTheme.spacing.medium,
   },
   bullet: {
-    width: 4,
-    marginRight: 8,
-    marginTop: 4,
+    width: resumeTheme.spacing.small,
+    marginRight: resumeTheme.spacing.small,
+    marginTop: resumeTheme.spacing.small,
   },
   bulletText: {
     flex: 1,
-    fontSize: 10,
-    color: '#374151',
-    lineHeight: 1.4,
+    fontSize: resumeTheme.fontSize.body,
+    color: resumeTheme.colors.text,
+    lineHeight: resumeTheme.lineHeight.body,
   },
   professionalSummary: {
-    fontSize: 10,
-    color: '#374151',
-    lineHeight: 1.5,
+    fontSize: resumeTheme.fontSize.body,
+    color: resumeTheme.colors.text,
+    lineHeight: resumeTheme.lineHeight.body,
     textAlign: 'justify',
   },
   skillCategory: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: resumeTheme.spacing.small,
   },
   skillCategoryName: {
-    fontSize: 10,
+    fontSize: resumeTheme.fontSize.body,
     fontWeight: 'bold',
-    color: '#111827',
+    color: resumeTheme.colors.text,
     width: 100,
   },
   skillsList: {
     flex: 1,
-    fontSize: 10,
-    color: '#374151',
+    fontSize: resumeTheme.fontSize.body,
+    color: resumeTheme.colors.text,
   },
   projectTech: {
-    fontSize: 9,
-    color: '#6b7280',
-    marginTop: 2,
+    fontSize: resumeTheme.fontSize.small,
+    color: resumeTheme.colors.subtleText,
+    marginTop: resumeTheme.spacing.small,
     fontStyle: 'italic',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'none',
   },
 });
 
@@ -119,7 +117,7 @@ interface ResumePDFDocumentProps {
   data: ResumeData;
 }
 
-export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) => {
+export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = React.memo(({ data }) => {
   const formatDate = (dateString: string): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -134,9 +132,7 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
           <Text style={styles.name}>{data.personalInfo.fullName || 'Your Name'}</Text>
           <View style={styles.contactInfo}>
             {data.personalInfo.email && (
-              <Link src={`mailto:${data.personalInfo.email}`} style={[styles.contactItem, styles.link]}>
-                {data.personalInfo.email}
-              </Link>
+              <Text style={styles.contactItem}>{data.personalInfo.email}</Text>
             )}
             {data.personalInfo.phone && (
               <Text style={styles.contactItem}>{data.personalInfo.phone}</Text>
@@ -145,19 +141,13 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
               <Text style={styles.contactItem}>{data.personalInfo.location}</Text>
             )}
             {data.personalInfo.linkedin && (
-              <Link src={data.personalInfo.linkedin} style={[styles.contactItem, styles.link]}>
-                LinkedIn
-              </Link>
+              <Text style={styles.contactItem}>{data.personalInfo.linkedin}</Text>
             )}
             {data.personalInfo.github && (
-              <Link src={data.personalInfo.github} style={[styles.contactItem, styles.link]}>
-                GitHub
-              </Link>
+              <Text style={styles.contactItem}>{data.personalInfo.github}</Text>
             )}
             {data.personalInfo.portfolio && (
-              <Link src={data.personalInfo.portfolio} style={[styles.contactItem, styles.link]}>
-                Portfolio
-              </Link>
+              <Text style={styles.contactItem}>{data.personalInfo.portfolio}</Text>
             )}
           </View>
         </View>
@@ -178,22 +168,22 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
               <View key={exp.id} style={styles.subsection}>
                 <View style={styles.subsectionHeader}>
                   <View>
-                    <Text style={styles.subsectionTitle}>{exp.position}</Text>
+                    <Text style={styles.subsectionTitle}>{exp.jobTitle}</Text>
                     <Text style={styles.subsectionSubtitle}>
                       {exp.company}
                       {exp.location && ` • ${exp.location}`}
                     </Text>
                   </View>
                   <Text style={styles.date}>
-                    {formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}
+                    {formatDate(exp.startDate)} - {exp.isCurrent ? 'Present' : (exp.endDate ? formatDate(exp.endDate) : 'Present')}
                   </Text>
                 </View>
-                {exp.description && exp.description.length > 0 && (
+                {exp.bulletPoints && exp.bulletPoints.length > 0 && (
                   <View>
-                    {exp.description.map((item, index) => (
+                    {exp.bulletPoints.map((bullet, index) => (
                       <View key={index} style={styles.bulletPoint}>
                         <Text style={styles.bullet}>•</Text>
-                        <Text style={styles.bulletText}>{item}</Text>
+                        <Text style={styles.bulletText}>{bullet.content}</Text>
                       </View>
                     ))}
                   </View>
@@ -211,22 +201,23 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
               <View key={project.id} style={styles.subsection}>
                 <View style={styles.subsectionHeader}>
                   <Text style={styles.subsectionTitle}>
-                    {project.link ? (
-                      <Link src={project.link} style={styles.link}>
-                        {project.name}
-                      </Link>
-                    ) : (
-                      project.name
-                    )}
+                    {project.name}
                   </Text>
-                  {project.startDate && project.endDate && (
-                    <Text style={styles.date}>
-                      {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                    </Text>
-                  )}
                 </View>
-                {project.description && (
-                  <Text style={styles.bulletText}>{project.description}</Text>
+                {project.link && (
+                  <Text style={styles.projectTech}>
+                    {project.link}
+                  </Text>
+                )}
+                {project.bulletPoints && project.bulletPoints.length > 0 && (
+                  <View>
+                    {project.bulletPoints.map((bullet, index) => (
+                      <View key={index} style={styles.bulletPoint}>
+                        <Text style={styles.bullet}>•</Text>
+                        <Text style={styles.bulletText}>{bullet.content}</Text>
+                      </View>
+                    ))}
+                  </View>
                 )}
                 {project.technologies && project.technologies.length > 0 && (
                   <Text style={styles.projectTech}>
@@ -246,9 +237,9 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
               <View key={edu.id} style={styles.subsection}>
                 <View style={styles.subsectionHeader}>
                   <View>
-                    <Text style={styles.subsectionTitle}>{edu.institution}</Text>
+                    <Text style={styles.subsectionTitle}>{edu.school}</Text>
                     <Text style={styles.subsectionSubtitle}>
-                      {edu.degree} in {edu.field}
+                      {edu.degree} in {edu.fieldOfStudy}
                       {edu.gpa && ` • GPA: ${edu.gpa}`}
                     </Text>
                   </View>
@@ -256,9 +247,84 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
                     {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
                   </Text>
                 </View>
-                {edu.description && (
-                  <Text style={styles.bulletText}>{edu.description}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Certifications */}
+        {data.certifications && data.certifications.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Certifications</Text>
+            {data.certifications.map((cert) => (
+              <View key={cert.id} style={styles.subsection}>
+                <View style={styles.subsectionHeader}>
+                  <Text style={styles.subsectionTitle}>{cert.name}</Text>
+                  <Text style={styles.date}>{formatDate(cert.dateObtained)}</Text>
+                </View>
+                <Text style={styles.subsectionSubtitle}>{cert.issuingOrganization}</Text>
+                {cert.credentialId && (
+                  <Text style={styles.bulletText}>Credential ID: {cert.credentialId}</Text>
                 )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Awards */}
+        {data.awards && data.awards.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Awards</Text>
+            {data.awards.map((award) => (
+              <View key={award.id} style={styles.subsection}>
+                <View style={styles.subsectionHeader}>
+                  <Text style={styles.subsectionTitle}>{award.name}</Text>
+                  <Text style={styles.date}>{formatDate(award.dateReceived)}</Text>
+                </View>
+                <Text style={styles.subsectionSubtitle}>{award.organization}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Volunteer Experience */}
+        {data.volunteerExperience && data.volunteerExperience.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Volunteer Experience</Text>
+            {data.volunteerExperience.map((vol) => (
+              <View key={vol.id} style={styles.subsection}>
+                <View style={styles.subsectionHeader}>
+                  <View>
+                    <Text style={styles.subsectionTitle}>{vol.organization}</Text>
+                    <Text style={styles.subsectionSubtitle}>{vol.role}</Text>
+                  </View>
+                  <Text style={styles.date}>
+                    {formatDate(vol.startDate)} - {vol.isCurrent ? 'Present' : (vol.endDate ? formatDate(vol.endDate) : 'Present')}
+                  </Text>
+                </View>
+                {vol.bulletPoints && vol.bulletPoints.length > 0 && (
+                  <View>
+                    {vol.bulletPoints.map((bullet, index) => (
+                      <View key={index} style={styles.bulletPoint}>
+                        <Text style={styles.bullet}>•</Text>
+                        <Text style={styles.bulletText}>{bullet.content}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Languages */}
+        {data.languages && data.languages.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Languages</Text>
+            {data.languages.map((lang, index) => (
+              <View key={index} style={styles.skillCategory}>
+                <Text style={styles.skillCategoryName}>{lang.language}:</Text>
+                <Text style={styles.skillsList}>{lang.proficiency}</Text>
               </View>
             ))}
           </View>
@@ -271,7 +337,7 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
             {data.skills.map((skillGroup, index) => (
               <View key={index} style={styles.skillCategory}>
                 <Text style={styles.skillCategoryName}>{skillGroup.category}:</Text>
-                <Text style={styles.skillsList}>{skillGroup.skills.join(', ')}</Text>
+                <Text style={styles.skillsList}>{skillGroup.list.join(', ')}</Text>
               </View>
             ))}
           </View>
@@ -279,4 +345,6 @@ export const ResumePDFDocument: React.FC<ResumePDFDocumentProps> = ({ data }) =>
       </Page>
     </Document>
   );
-};
+});
+
+ResumePDFDocument.displayName = 'ResumePDFDocument';

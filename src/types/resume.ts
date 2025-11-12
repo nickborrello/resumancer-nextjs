@@ -10,41 +10,77 @@ export interface PersonalInfo {
   portfolio?: string;
 }
 
+export interface BulletPoint {
+  id: string;
+  content: string;
+}
+
 export interface Education {
   id: string;
-  institution: string;
+  school: string;
   degree: string;
-  field: string;
+  fieldOfStudy: string;
+  location?: string;
   startDate: string;
   endDate: string;
   gpa?: string;
-  description?: string;
 }
 
 export interface Experience {
   id: string;
   company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
+  jobTitle: string;
   location?: string;
-  description: string[];
+  startDate: string;
+  endDate?: string;
+  isCurrent: boolean;
+  bulletPoints: BulletPoint[];
 }
 
 export interface Project {
   id: string;
   name: string;
-  description: string;
-  technologies: string[];
   link?: string;
-  startDate?: string;
-  endDate?: string;
+  technologies: string[];
+  bulletPoints: BulletPoint[];
 }
 
-export interface Skill {
+export interface SkillCategory {
+  id: string;
   category: string;
-  skills: string[];
+  list: string[];
+}
+
+export interface Certification {
+  id: string;
+  name: string;
+  issuingOrganization: string;
+  dateObtained: string;
+  credentialId?: string;
+}
+
+export interface Award {
+  id: string;
+  name: string;
+  organization: string;
+  dateReceived: string;
+}
+
+export interface VolunteerExperience {
+  id: string;
+  organization: string;
+  role: string;
+  location?: string;
+  startDate: string;
+  endDate?: string;
+  isCurrent: boolean;
+  bulletPoints: BulletPoint[];
+}
+
+export interface Language {
+  id: string;
+  language: string;
+  proficiency: string;
 }
 
 export interface ResumeData {
@@ -53,7 +89,11 @@ export interface ResumeData {
   experiences: Experience[];
   education: Education[];
   projects: Project[];
-  skills: Skill[];
+  skills: SkillCategory[];
+  certifications?: Certification[];
+  awards?: Award[];
+  volunteerExperience?: VolunteerExperience[];
+  languages?: Language[];
 }
 
 export interface Resume {

@@ -20,7 +20,7 @@ export function SkillsSection() {
   });
 
   const addSkillCategory = () => {
-    append({ id: crypto.randomUUID(), category: "", skills: [] });
+    append({ id: crypto.randomUUID(), category: "", list: [] });
   };
 
   return (
@@ -69,19 +69,19 @@ function SkillCategoryEntry({
 }) {
   const { register, watch, setValue, formState: { errors: _errors } } = useFormContext<ResumeFormData>();
 
-  const skills = watch(`skills.${index}.skills`) || [];
+  const skills = watch(`skills.${index}.list`) || [];
   const [skillInput, setSkillInput] = useState('');
 
   const addSkill = () => {
     if (skillInput.trim()) {
-      setValue(`skills.${index}.skills`, [...skills, skillInput.trim()]);
+      setValue(`skills.${index}.list`, [...skills, skillInput.trim()]);
       setSkillInput('');
     }
   };
 
   const removeSkill = (skillIndex: number) => {
     setValue(
-      `skills.${index}.skills`,
+      `skills.${index}.list`,
       skills.filter((_, i) => i !== skillIndex)
     );
   };
@@ -169,9 +169,9 @@ function SkillCategoryEntry({
               ))}
             </div>
           )}
-          {_errors.skills?.[index]?.skills && (
+          {_errors.skills?.[index]?.list && (
             <p className="text-sm text-red-400">
-              {_errors.skills[index]?.skills?.message}
+              {_errors.skills[index]?.list?.message}
             </p>
           )}
         </div>

@@ -23,11 +23,9 @@ export function ProjectsSection() {
     append({
       id: crypto.randomUUID(),
       name: '',
-      description: '',
-      technologies: [],
       link: '',
-      startDate: '',
-      endDate: '',
+      technologies: [],
+      bulletPoints: [{ id: crypto.randomUUID(), content: '' }],
     });
   };
 
@@ -136,18 +134,20 @@ function ProjectEntry({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor={`projects.${index}.description`} className="text-slate-200">
-            Description <span className="text-red-400">*</span>
+          <Label className="text-slate-200">
+            Project Details <span className="text-red-400">*</span>
           </Label>
-          <Textarea
-            {...register(`projects.${index}.description`)}
-            placeholder="Describe what the project does, your role, and the impact..."
-            rows={4}
-            className="bg-slate-800 border-slate-700 text-slate-100"
-          />
-          {errors.projects?.[index]?.description && (
+          <div className="space-y-2">
+            <Textarea
+              {...register(`projects.${index}.bulletPoints.0.content`)}
+              placeholder="Describe what the project does, your role, and the impact..."
+              rows={4}
+              className="bg-slate-800 border-slate-700 text-slate-100"
+            />
+          </div>
+          {errors.projects?.[index]?.bulletPoints && (
             <p className="text-sm text-red-400">
-              {errors.projects[index]?.description?.message}
+              {errors.projects[index]?.bulletPoints?.message}
             </p>
           )}
         </div>
@@ -201,7 +201,7 @@ function ProjectEntry({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
           <div className="space-y-2">
             <Label htmlFor={`projects.${index}.link`} className="text-slate-200">
               Project Link
@@ -217,28 +217,6 @@ function ProjectEntry({
                 {errors.projects[index]?.link?.message}
               </p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor={`projects.${index}.startDate`} className="text-slate-200">
-              Start Date
-            </Label>
-            <Input
-              {...register(`projects.${index}.startDate`)}
-              placeholder="Jan 2023"
-              className="bg-slate-800 border-slate-700 text-slate-100"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor={`projects.${index}.endDate`} className="text-slate-200">
-              End Date
-            </Label>
-            <Input
-              {...register(`projects.${index}.endDate`)}
-              placeholder="Mar 2023"
-              className="bg-slate-800 border-slate-700 text-slate-100"
-            />
           </div>
         </div>
       </div>

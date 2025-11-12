@@ -44,3 +44,5 @@ next-env.d.ts
 # build output
 build-log.txt
 build-output.txt
+
+/docs/

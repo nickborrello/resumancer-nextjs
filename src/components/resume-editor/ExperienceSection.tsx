@@ -18,12 +18,12 @@ export function ExperienceSection() {
     append({
       id: crypto.randomUUID(),
       company: '',
-      position: '',
+      jobTitle: '',
       startDate: '',
       endDate: '',
-      current: false,
+      isCurrent: false,
       location: '',
-      description: [''],
+      bulletPoints: [{ id: crypto.randomUUID(), content: '' }],
     });
   };
 
@@ -51,8 +51,8 @@ export function ExperienceSection() {
 
 function ExperienceEntry({ index, remove }: { index: number; remove: (index: number) => void }) {
   const { control, register, watch, setValue, formState: { errors } } = useFormContext<ResumeFormData>(); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const { fields: bulletFields, append: appendBullet, remove: removeBullet } = useFieldArray({ control, name: `experiences.${index}.description` as 'experiences' });
-  const current = watch(`experiences.${index}.current` as 'experiences');
+  const { fields: bulletFields, append: appendBullet, remove: removeBullet } = useFieldArray({ control, name: `experiences.${index}.bulletPoints` as 'experiences' });
+  const isCurrent = watch(`experiences.${index}.isCurrent` as 'experiences');
 
   return (
     <div className="p-4 border border-slate-700 rounded-lg bg-slate-800/50 space-y-4">
@@ -67,9 +67,9 @@ function ExperienceEntry({ index, remove }: { index: number; remove: (index: num
           {errors.experiences?.[index]?.company && (<p className="text-sm text-red-400">{errors.experiences[index]?.company?.message}</p>)}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`experiences.${index}.position`} className="text-slate-200">Position <span className="text-red-400">*</span></Label>
-          <Input {...register(`experiences.${index}.position` as 'experiences')} placeholder="Software Engineer" className="bg-slate-800 border-slate-700 text-slate-100" />
-          {errors.experiences?.[index]?.position && (<p className="text-sm text-red-400">{errors.experiences[index]?.position?.message}</p>)}
+          <Label htmlFor={`experiences.${index}.jobTitle`} className="text-slate-200">Job Title <span className="text-red-400">*</span></Label>
+          <Input {...register(`experiences.${index}.jobTitle` as 'experiences')} placeholder="Software Engineer" className="bg-slate-800 border-slate-700 text-slate-100" />
+          {errors.experiences?.[index]?.jobTitle && (<p className="text-sm text-red-400">{errors.experiences[index]?.jobTitle?.message}</p>)}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`experiences.${index}.location`} className="text-slate-200">Location</Label>
@@ -81,28 +81,28 @@ function ExperienceEntry({ index, remove }: { index: number; remove: (index: num
           {errors.experiences?.[index]?.startDate && (<p className="text-sm text-red-400">{errors.experiences[index]?.startDate?.message}</p>)}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`experiences.${index}.endDate`} className="text-slate-200">End Date {current && '(Current Position)'}</Label>
-          <Input {...register(`experiences.${index}.endDate` as 'experiences')} placeholder="Present" disabled={!!current} className="bg-slate-800 border-slate-700 text-slate-100 disabled:opacity-50" />
+          <Label htmlFor={`experiences.${index}.endDate`} className="text-slate-200">End Date {isCurrent && '(Current Position)'}</Label>
+          <Input {...register(`experiences.${index}.endDate` as 'experiences')} placeholder="Present" disabled={!!isCurrent} className="bg-slate-800 border-slate-700 text-slate-100 disabled:opacity-50" />
         </div>
         <div className="flex items-center space-x-2 pt-6">
-          <Checkbox id={`experiences.${index}.current`} checked={!!current} onCheckedChange={(checked) => { setValue(`experiences.${index}.current` as any, checked as boolean); if (checked) { setValue(`experiences.${index}.endDate` as any, ''); }}} className="border-slate-700" />
-          <Label htmlFor={`experiences.${index}.current`} className="text-sm text-slate-200 cursor-pointer">I currently work here</Label>
+          <Checkbox id={`experiences.${index}.isCurrent`} checked={!!isCurrent} onCheckedChange={(checked) => { setValue(`experiences.${index}.isCurrent` as any, checked as boolean); if (checked) { setValue(`experiences.${index}.endDate` as any, ''); }}} className="border-slate-700" />
+          <Label htmlFor={`experiences.${index}.isCurrent`} className="text-sm text-slate-200 cursor-pointer">I currently work here</Label>
         </div>
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-slate-200">Responsibilities & Achievements <span className="text-red-400">*</span></Label>
-          <Button type="button" onClick={() => appendBullet('' as any)} variant="ghost" size="sm" className="text-purple-300 hover:bg-purple-500/10"><Plus className="h-3 w-3 mr-1" />Add Bullet</Button>
+          <Button type="button" onClick={() => appendBullet({ id: crypto.randomUUID(), content: '' } as any)} variant="ghost" size="sm" className="text-purple-300 hover:bg-purple-500/10"><Plus className="h-3 w-3 mr-1" />Add Bullet</Button>
         </div>
         <div className="space-y-2">
           {bulletFields.map((bulletField, bulletIndex) => (
             <div key={bulletField.id} className="flex gap-2">
-              <Textarea {...register(`experiences.${index}.description.${bulletIndex}` as 'experiences')} placeholder="• Describe your responsibilities..." rows={2} className="bg-slate-800 border-slate-700 text-slate-100 flex-1" />
+              <Textarea {...register(`experiences.${index}.bulletPoints.${bulletIndex}.content` as 'experiences')} placeholder="• Describe your responsibilities..." rows={2} className="bg-slate-800 border-slate-700 text-slate-100 flex-1" />
               {bulletFields.length > 1 && (<Button type="button" onClick={() => removeBullet(bulletIndex)} variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10"><Trash2 className="h-4 w-4" /></Button>)}
             </div>
           ))}
         </div>
-        {errors.experiences?.[index]?.description && (<p className="text-sm text-red-400">{errors.experiences[index]?.description?.message}</p>)}
+        {errors.experiences?.[index]?.bulletPoints && (<p className="text-sm text-red-400">{errors.experiences[index]?.bulletPoints?.message}</p>)}
       </div>
     </div>
   );
