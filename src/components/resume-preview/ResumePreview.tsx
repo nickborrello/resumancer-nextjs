@@ -62,11 +62,42 @@ export function ResumePreview() {
       category: skill.category || '',
       list: skill.list || [],
     })),
+    certifications: (debouncedFormData?.certifications || []).map((cert) => ({
+      id: cert.id || '',
+      name: cert.name || '',
+      issuingOrganization: cert.issuingOrganization || '',
+      dateObtained: cert.dateObtained || '',
+      credentialId: cert.credentialId || '',
+    })),
+    awards: (debouncedFormData?.awards || []).map((award) => ({
+      id: award.id || '',
+      name: award.name || '',
+      organization: award.organization || '',
+      dateReceived: award.dateReceived || '',
+    })),
+    volunteerExperience: (debouncedFormData?.volunteerExperience || []).map((vol) => ({
+      id: vol.id || '',
+      organization: vol.organization || '',
+      role: vol.role || '',
+      location: vol.location || '',
+      startDate: vol.startDate || '',
+      endDate: vol.endDate || '',
+      isCurrent: vol.isCurrent || false,
+      bulletPoints: (vol.bulletPoints || []).map((bullet) => ({
+        id: bullet.id || '',
+        content: bullet.content || '',
+      })),
+    })),
+    languages: (debouncedFormData?.languages || []).map((lang) => ({
+      id: lang.id || '',
+      language: lang.language || '',
+      proficiency: lang.proficiency || '',
+    })),
   }), [debouncedFormData]);
 
   const containerStyle: React.CSSProperties = {
     width: '100%',
-    height: 'calc(100vh - 16rem)',
+    height: '100%',
     minHeight: '600px',
     backgroundColor: resumeTheme.colors.background,
     color: resumeTheme.colors.text,
@@ -244,6 +275,88 @@ export function ResumePreview() {
             <div key={skill.id} style={{ marginBottom: `${resumeTheme.spacing.medium}px` }}>
               <h3 style={{ ...subheadingStyle, fontSize: `${resumeTheme.fontSize.body}px`, marginBottom: `${resumeTheme.spacing.small}px` }}>{skill.category}</h3>
               <div style={bodyStyle}>{skill.list.join(', ')}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Certifications */}
+      {resumeData.certifications && resumeData.certifications.length > 0 && (
+        <div style={sectionStyle}>
+          <h2 style={subheadingStyle}>Certifications</h2>
+          {resumeData.certifications.map((cert) => (
+            <div key={cert.id} style={{ marginBottom: `${resumeTheme.spacing.large}px` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: `${resumeTheme.spacing.small}px` }}>
+                <h3 style={{ ...subheadingStyle, fontSize: `${resumeTheme.fontSize.body}px`, marginBottom: 0 }}>{cert.name}</h3>
+                <span style={{ ...bodyStyle, fontSize: `${resumeTheme.fontSize.small}px` }} className="subtle-text">
+                  {cert.dateObtained}
+                </span>
+              </div>
+              <div style={bodyStyle}>{cert.issuingOrganization}</div>
+              {cert.credentialId && (
+                <div style={{ ...bodyStyle, fontSize: `${resumeTheme.fontSize.small}px` }} className="subtle-text">
+                  Credential ID: {cert.credentialId}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Awards */}
+      {resumeData.awards && resumeData.awards.length > 0 && (
+        <div style={sectionStyle}>
+          <h2 style={subheadingStyle}>Awards</h2>
+          {resumeData.awards.map((award) => (
+            <div key={award.id} style={{ marginBottom: `${resumeTheme.spacing.large}px` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: `${resumeTheme.spacing.small}px` }}>
+                <h3 style={{ ...subheadingStyle, fontSize: `${resumeTheme.fontSize.body}px`, marginBottom: 0 }}>{award.name}</h3>
+                <span style={{ ...bodyStyle, fontSize: `${resumeTheme.fontSize.small}px` }} className="subtle-text">
+                  {award.dateReceived}
+                </span>
+              </div>
+              <div style={bodyStyle}>{award.organization}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Volunteer Experience */}
+      {resumeData.volunteerExperience && resumeData.volunteerExperience.length > 0 && (
+        <div style={sectionStyle}>
+          <h2 style={subheadingStyle}>Volunteer Experience</h2>
+          {resumeData.volunteerExperience.map((vol) => (
+            <div key={vol.id} style={{ marginBottom: `${resumeTheme.spacing.large}px` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: `${resumeTheme.spacing.small}px` }}>
+                <h3 style={{ ...subheadingStyle, fontSize: `${resumeTheme.fontSize.body}px`, marginBottom: 0 }}>{vol.role}</h3>
+                <span style={{ ...bodyStyle, fontSize: `${resumeTheme.fontSize.small}px` }} className="subtle-text">
+                  {vol.startDate} - {vol.isCurrent ? 'Present' : vol.endDate}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: `${resumeTheme.spacing.small}px` }}>
+                <span style={{ ...bodyStyle, fontWeight: 'bold' }}>{vol.organization}</span>
+                {vol.location && <span style={bodyStyle}>{vol.location}</span>}
+              </div>
+              {vol.bulletPoints.map((bullet) => (
+                <div key={bullet.id} style={bulletStyle}>
+                  • {bullet.content}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Languages */}
+      {resumeData.languages && resumeData.languages.length > 0 && (
+        <div style={sectionStyle}>
+          <h2 style={subheadingStyle}>Languages</h2>
+          {resumeData.languages.map((lang) => (
+            <div key={lang.id} style={{ marginBottom: `${resumeTheme.spacing.medium}px` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ ...bodyStyle, fontWeight: 'bold' }}>{lang.language}</span>
+                <span style={bodyStyle}>{lang.proficiency}</span>
+              </div>
             </div>
           ))}
         </div>

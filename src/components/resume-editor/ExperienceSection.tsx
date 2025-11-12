@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ResumeFormData } from '@/lib/validation/resumeSchemas';
 
@@ -28,10 +29,10 @@ export function ExperienceSection() {
   };
 
   return (
-    <Card className="bg-slate-900/50 border-purple-500/30">
-      <CardHeader>
+    <Card className="bg-slate-900/50 border-purple-500/30 h-full flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="space-y-2">
             <CardTitle className="text-purple-300">Work Experience</CardTitle>
             <CardDescription className="text-slate-400">Your professional work history</CardDescription>
           </div>
@@ -41,9 +42,13 @@ export function ExperienceSection() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {fields.length === 0 && (<div className="text-center py-8 text-slate-400"><p>No experience entries yet. Click "Add Experience" to get started.</p></div>)}
-        {fields.map((field, index) => (<ExperienceEntry key={field.id} index={index} remove={remove} />))}
+      <CardContent className="flex-1 min-h-0">
+        <ScrollArea className="h-full">
+          <div className="space-y-4">
+            {fields.length === 0 && (<div className="text-center py-8 text-slate-400"><p>No experience entries yet. Click "Add Experience" to get started.</p></div>)}
+            {fields.map((field, index) => (<ExperienceEntry key={field.id} index={index} remove={remove} />))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

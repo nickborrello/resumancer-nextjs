@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, X } from 'lucide-react';
 import type { ResumeFormData } from '@/lib/validation/resumeSchemas';
@@ -24,10 +25,10 @@ export function SkillsSection() {
   };
 
   return (
-    <Card className="bg-slate-900/50 border-purple-500/30">
-      <CardHeader>
+    <Card className="bg-slate-900/50 border-purple-500/30 h-full flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="space-y-2">
             <CardTitle className="text-purple-300">Skills</CardTitle>
             <CardDescription className="text-slate-400">
               Your technical and professional skills by category
@@ -45,16 +46,20 @@ export function SkillsSection() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {fields.length === 0 && (
-          <div className="text-center py-8 text-slate-400">
-            <p>No skill categories yet. Click "Add Category" to organize your skills.</p>
-          </div>
-        )}
+      <CardContent className="flex-1 min-h-0">
+        <ScrollArea className="h-full">
+          <div className="space-y-4">
+            {fields.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <p>No skill categories yet. Click "Add Category" to organize your skills.</p>
+              </div>
+            )}
 
-        {fields.map((field, index) => (
-          <SkillCategoryEntry key={field.id} index={index} remove={remove} />
-        ))}
+            {fields.map((field, index) => (
+              <SkillCategoryEntry key={field.id} index={index} remove={remove} />
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

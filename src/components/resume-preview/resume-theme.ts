@@ -3,12 +3,12 @@
 // Define styles in a neutral format, not CSS or react-pdf specific
 export const resumeTheme = {
   colors: {
-    primary: '#8c4da3', // Dark purple
-    text: '#E2E8F0',    // Light text color (slate-200)
-    background: '#0F172A', // Dark background (slate-900)
-    subtleText: '#94A3B8', // Medium text color (slate-400)
-    accent: '#A855F7',   // Purple accent
-    border: '#374151',   // Border color
+    primary: '#1a1a1a', // Dark text for headings
+    text: '#333333',    // Dark text for body
+    background: '#ffffff', // White background
+    subtleText: '#666666', // Gray text for secondary info
+    accent: '#2563eb',   // Blue accent for links/headings
+    border: '#e5e7eb',   // Light border
   },
   fontSize: {
     heading: 20,

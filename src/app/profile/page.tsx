@@ -8,13 +8,18 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 
 // Import form component types
-import type { Education, Experience, Project, SkillCategory } from "@/types/profile";
+import type { Education, Experience, Project, SkillCategory, Language, Certification, Award, Volunteer } from '@/types/profile';
 
 // Import form components
 import EducationForm from "@/components/profile/EducationForm";
 import ExperienceForm from "@/components/profile/ExperienceForm";
 import ProjectsForm from "@/components/profile/ProjectsForm";
 import SkillsForm from "@/components/profile/SkillsForm";
+import ProfessionalSummaryForm from "@/components/profile/ProfessionalSummaryForm";
+import LanguagesForm from "@/components/profile/LanguagesForm";
+import CertificationsForm from "@/components/profile/CertificationsForm";
+import AwardsForm from "@/components/profile/AwardsForm";
+import VolunteerForm from "@/components/profile/VolunteerForm";
 
 // Import CollapsibleSection
 import { CollapsibleSection } from "@/components/profile/CollapsibleSection";
@@ -72,16 +77,25 @@ export default function ProfilePage() {
     name: '',
     phone: '',
     location: '',
+    address: '',
+    address2: '',
+    postalCode: '',
     linkedin: '',
     portfolio: '',
     github: '',
+    otherUrl: '',
   });
 
   // Profile section states
+  const [professionalSummary, setProfessionalSummary] = useState('');
   const [education, setEducation] = useState<Education[]>([]);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [skills, setSkills] = useState<SkillCategory[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [awards, setAwards] = useState<Award[]>([]);
+  const [volunteer, setVolunteer] = useState<Volunteer[]>([]);
 
   // UI and Error states
   const [uiStatus, setUIStatus] = useState<'idle' | 'loading' | 'saving' | 'error'>('loading');
@@ -92,7 +106,7 @@ export default function ProfilePage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const autoSaveAbortControllerRef = useRef<AbortController | null>(null);
   const isInitialMount = useRef(true);
-  const lastSavedData = useRef<{ formData: typeof formData, education: Education[], experiences: Experience[], projects: Project[], skills: SkillCategory[] } | null>(null);
+  const lastSavedData = useRef<{ formData: typeof formData, professionalSummary: string, education: Education[], experiences: Experience[], projects: Project[], skills: SkillCategory[], languages: Language[], certifications: Certification[], awards: Award[], volunteer: Volunteer[] } | null>(null);
   const uiStatusRef = useRef(uiStatus);
 
   // Update uiStatusRef when uiStatus changes
@@ -102,10 +116,15 @@ export default function ProfilePage() {
 
   // Debounced states for auto-save
   const debouncedFormData = useDebounce(formData, 2000);
+  const debouncedProfessionalSummary = useDebounce(professionalSummary, 2000);
   const debouncedEducation = useDebounce(education, 2000);
   const debouncedExperiences = useDebounce(experiences, 2000);
   const debouncedProjects = useDebounce(projects, 2000);
   const debouncedSkills = useDebounce(skills, 2000);
+  const debouncedLanguages = useDebounce(languages, 2000);
+  const debouncedCertifications = useDebounce(certifications, 2000);
+  const debouncedAwards = useDebounce(awards, 2000);
+  const debouncedVolunteer = useDebounce(volunteer, 2000);
 
   // --- 2. EVENT HANDLERS ---
 
@@ -199,22 +218,22 @@ export default function ProfilePage() {
         email: session.user.email || '',
         phoneNumber: formData.phone,
         location: formData.location,
+        address: formData.address,
+        address2: formData.address2,
+        postalCode: formData.postalCode,
+        professionalSummary,
         linkedin: formData.linkedin,
         portfolio: formData.portfolio,
         github: formData.github,
+        otherUrl: formData.otherUrl,
         education,
         experiences,
         projects,
         skills,
-        // Adding other fields from schema with default/empty values if not in form
-        address: '',
-        address2: '',
-        postalCode: '',
-        otherUrl: '',
-        languages: [],
-        certifications: [],
-        awards: [],
-        volunteer: [],
+        languages,
+        certifications,
+        awards,
+        volunteer,
       };
 
       // Pre-save validation
@@ -269,14 +288,23 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
         name: `${updatedProfile.firstName || ''} ${updatedProfile.lastName || ''}`.trim() || session.user.name || '',
         phone: updatedProfile.phoneNumber || '',
         location: updatedProfile.location || '',
+        address: updatedProfile.address || '',
+        address2: updatedProfile.address2 || '',
+        postalCode: updatedProfile.postalCode || '',
         linkedin: updatedProfile.linkedin || '',
         portfolio: updatedProfile.portfolio || '',
         github: updatedProfile.github || '',
+        otherUrl: updatedProfile.otherUrl || '',
       });
+      setProfessionalSummary(updatedProfile.professionalSummary || '');
       setEducation(updatedProfile.education || []);
       setExperiences(updatedProfile.experiences || []);
       setProjects(updatedProfile.projects || []);
       setSkills(updatedProfile.skills || []);
+      setLanguages(updatedProfile.languages || []);
+      setCertifications(updatedProfile.certifications || []);
+      setAwards(updatedProfile.awards || []);
+      setVolunteer(updatedProfile.volunteer || []);
 
       setUIStatus('idle');
       options?.onSuccess?.();
@@ -365,22 +393,22 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
       email: session.user.email || '',
       phoneNumber: formData.phone,
       location: formData.location,
+      address: formData.address,
+      address2: formData.address2,
+      postalCode: formData.postalCode,
+      professionalSummary,
       linkedin: formData.linkedin,
       portfolio: formData.portfolio,
       github: formData.github,
+      otherUrl: formData.otherUrl,
       education,
       experiences,
       projects,
       skills,
-      // Adding other fields from schema with default/empty values if not in form
-      address: '',
-      address2: '',
-      postalCode: '',
-      otherUrl: '',
-      languages: [],
-      certifications: [],
-      awards: [],
-      volunteer: [],
+      languages,
+      certifications,
+      awards,
+      volunteer,
     };
 
     const validationResult = ProfileDataSchema.safeParse(profileData);
@@ -422,28 +450,47 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
           name: `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim() || session.user.name || '',
           phone: profileData.phoneNumber || '',
           location: profileData.location || '',
+          address: profileData.address || '',
+          address2: profileData.address2 || '',
+          postalCode: profileData.postalCode || '',
           linkedin: profileData.linkedin || '',
           portfolio: profileData.portfolio || '',
           github: profileData.github || '',
+          otherUrl: profileData.otherUrl || '',
         };
+        const loadedProfessionalSummary = profileData.professionalSummary || '';
         const loadedEducation = profileData.education || [];
         const loadedExperiences = profileData.experiences || [];
         const loadedProjects = profileData.projects || [];
         const loadedSkills = profileData.skills || [];
+        const loadedLanguages = profileData.languages || [];
+        const loadedCertifications = profileData.certifications || [];
+        const loadedAwards = profileData.awards || [];
+        const loadedVolunteer = profileData.volunteer || [];
 
         setFormData(loadedFormData);
+        setProfessionalSummary(loadedProfessionalSummary);
         setEducation(loadedEducation);
         setExperiences(loadedExperiences);
         setProjects(loadedProjects);
         setSkills(loadedSkills);
+        setLanguages(loadedLanguages);
+        setCertifications(loadedCertifications);
+        setAwards(loadedAwards);
+        setVolunteer(loadedVolunteer);
 
         // Set initial data for auto-save comparison
         lastSavedData.current = {
           formData: loadedFormData,
+          professionalSummary: loadedProfessionalSummary,
           education: loadedEducation,
           experiences: loadedExperiences,
           projects: loadedProjects,
           skills: loadedSkills,
+          languages: loadedLanguages,
+          certifications: loadedCertifications,
+          awards: loadedAwards,
+          volunteer: loadedVolunteer,
         };
 
         setUIStatus('idle');
@@ -485,10 +532,15 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
     // Define currentData for comparison
     const currentData = {
       formData: debouncedFormData,
+      professionalSummary: debouncedProfessionalSummary,
       education: debouncedEducation,
       experiences: debouncedExperiences,
       projects: debouncedProjects,
       skills: debouncedSkills,
+      languages: debouncedLanguages,
+      certifications: debouncedCertifications,
+      awards: debouncedAwards,
+      volunteer: debouncedVolunteer,
     };
 
     if (lastSavedData.current && deepEqual(currentData, lastSavedData.current)) {
@@ -558,7 +610,7 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedFormData, debouncedEducation, debouncedExperiences, debouncedProjects, debouncedSkills, uiStatus]); // Rerun when debounced data or uiStatus changes
+  }, [debouncedFormData, debouncedProfessionalSummary, debouncedEducation, debouncedExperiences, debouncedProjects, debouncedSkills, debouncedLanguages, debouncedCertifications, debouncedAwards, debouncedVolunteer, uiStatus]); // Rerun when debounced data or uiStatus changes
 
   // Effect to abort auto-save when manual save starts
   useEffect(() => {
@@ -680,6 +732,63 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
                     </p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Address</label>
+                  <Input
+                    value={formData.address}
+                    onChange={handleInputChange('address')}
+                    onBlur={runValidation}
+                    placeholder="Street address"
+                    disabled={uiStatus === 'saving'}
+                    className={errors?.['address'] ? 'border-red-500' : ''}
+                    aria-invalid={!!errors?.['address']}
+                    aria-describedby="address-error"
+                  />
+                  {errors?.['address'] && (
+                    <p id="address-error" className="text-red-500 text-sm mt-1">
+                      {(errors['address'] as string[])?.[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Address Line 2</label>
+                  <Input
+                    value={formData.address2}
+                    onChange={handleInputChange('address2')}
+                    onBlur={runValidation}
+                    placeholder="Apartment, suite, etc. (optional)"
+                    disabled={uiStatus === 'saving'}
+                    className={errors?.['address2'] ? 'border-red-500' : ''}
+                    aria-invalid={!!errors?.['address2']}
+                    aria-describedby="address2-error"
+                  />
+                  {errors?.['address2'] && (
+                    <p id="address2-error" className="text-red-500 text-sm mt-1">
+                      {(errors['address2'] as string[])?.[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Postal Code</label>
+                  <Input
+                    value={formData.postalCode}
+                    onChange={handleInputChange('postalCode')}
+                    onBlur={runValidation}
+                    placeholder="ZIP or postal code"
+                    disabled={uiStatus === 'saving'}
+                    className={errors?.['postalCode'] ? 'border-red-500' : ''}
+                    aria-invalid={!!errors?.['postalCode']}
+                    aria-describedby="postalCode-error"
+                  />
+                  {errors?.['postalCode'] && (
+                    <p id="postalCode-error" className="text-red-500 text-sm mt-1">
+                      {(errors['postalCode'] as string[])?.[0]}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -738,6 +847,26 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
                 {errors?.['github'] && (
                   <p id="github-error" className="text-red-500 text-sm mt-1">
                     {(errors['github'] as string[])?.[0]}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Other URL</label>
+                <Input
+                  type="url"
+                  value={formData.otherUrl}
+                  onChange={handleInputChange('otherUrl')}
+                  onBlur={runValidation}
+                  placeholder="https://yourwebsite.com"
+                  disabled={uiStatus === 'saving'}
+                  className={errors?.['otherUrl'] ? 'border-red-500' : ''}
+                  aria-invalid={!!errors?.['otherUrl']}
+                  aria-describedby="otherUrl-error"
+                />
+                {errors?.['otherUrl'] && (
+                  <p id="otherUrl-error" className="text-red-500 text-sm mt-1">
+                    {(errors['otherUrl'] as string[])?.[0]}
                   </p>
                 )}
               </div>
@@ -805,6 +934,66 @@ setPreSaveErrors(validationResult.error.issues.map((i: { message: string }) => i
               actions={<Button onClick={handleAddSkillCategory} className="btn-add" disabled={uiStatus === 'saving'}>Add New</Button>}
             >
               <SkillsForm skills={skills} onChange={setSkills} errors={errors?.['skills'] as Record<number, Record<string, string[]>> || {}} onBlurValidate={runValidation} />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Professional Summary"
+              defaultOpen={false}
+            >
+              <ProfessionalSummaryForm
+                professionalSummary={professionalSummary}
+                onChange={setProfessionalSummary}
+                errors={errors?.['professionalSummary'] as string[] || []}
+                onBlurValidate={runValidation}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Languages"
+              defaultOpen={false}
+            >
+              <LanguagesForm
+                languages={languages}
+                onChange={setLanguages}
+                errors={errors?.['languages'] as Record<number, Record<string, string[]>> || {}}
+                onBlurValidate={runValidation}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Certifications"
+              defaultOpen={false}
+            >
+              <CertificationsForm
+                certifications={certifications}
+                onChange={setCertifications}
+                errors={errors?.['certifications'] as Record<number, Record<string, string[]>> || {}}
+                onBlurValidate={runValidation}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Awards & Honors"
+              defaultOpen={false}
+            >
+              <AwardsForm
+                awards={awards}
+                onChange={setAwards}
+                errors={errors?.['awards'] as Record<number, Record<string, string[]>> || {}}
+                onBlurValidate={runValidation}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Volunteer Experience"
+              defaultOpen={false}
+            >
+              <VolunteerForm
+                volunteer={volunteer}
+                onChange={setVolunteer}
+                errors={errors?.['volunteer'] as Record<number, Record<string, string[]>> || {}}
+                onBlurValidate={runValidation}
+              />
             </CollapsibleSection>
 
             {/* Account Information */}

@@ -121,6 +121,7 @@ export const profiles = pgTable("profiles", {
   address: text("address"),
   address2: text("address2"),
   postalCode: text("postal_code"),
+  professionalSummary: text("professional_summary"),
   isPrimary: integer("is_primary").default(1),
   /**
    * JSON array of education objects matching Education interface from Task 2.1

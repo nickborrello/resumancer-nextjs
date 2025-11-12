@@ -9,11 +9,12 @@ import { ExperienceSection } from './ExperienceSection';
 import { ProjectsSection } from './ProjectsSection';
 import { SkillsSection } from './SkillsSection';
 import { ProfessionalSummarySection } from './ProfessionalSummarySection';
-import { AISuggestionsPanel } from './AISuggestionsPanel';
+import { CertificationsSection } from './CertificationsSection';
+import { AwardsSection } from './AwardsSection';
+import { VolunteerExperienceSection } from './VolunteerExperienceSection';
+import { LanguagesSection } from './LanguagesSection';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Download, FileText, Sparkles } from 'lucide-react';
+import { Save, Download, FileText } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import ResumePreview to avoid SSR issues with PDFViewer
@@ -43,19 +44,14 @@ interface ResumeEditorClientProps {
   mode: 'edit' | 'create';
 }
 
-export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditorClientProps) {
+export function ResumeEditorClient({ resumeId, initialData }: ResumeEditorClientProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState('personal');
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [showAISuggestions, setShowAISuggestions] = useState(false);
-  const [isDemoResume, setIsDemoResume] = useState(false);
 
   // Track the last saved data to prevent unnecessary saves
   const lastSavedDataRef = useRef<string | null>(null);
 
-  // This function is now "pure" and only returns synchronous data.
-  // It no longer causes a side effect (setting state).
   const getDefaultValues = useCallback(() => {
     if (initialData) {
       return {
@@ -65,11 +61,13 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
         experiences: initialData.resumeData.experiences,
         projects: initialData.resumeData.projects,
         skills: initialData.resumeData.skills,
+        certifications: initialData.resumeData.certifications,
+        awards: initialData.resumeData.awards,
+        volunteerExperience: initialData.resumeData.volunteerExperience,
+        languages: initialData.resumeData.languages,
       };
     }
 
-    // Default to an empty form. 
-    // The useEffect below will handle loading from backend or localStorage.
     return {
       personalInfo: { fullName: '', email: '', phone: '', location: '', linkedin: '', github: '', portfolio: '' },
       professionalSummary: '',
@@ -77,6 +75,10 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
       experiences: [],
       projects: [],
       skills: [],
+      certifications: [],
+      awards: [],
+      volunteerExperience: [],
+      languages: [],
     };
   }, [initialData]);
 
@@ -89,11 +91,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const watchedData = methods.watch();
   const debouncedData = useDebounce(watchedData, 1500);
 
-  // Function to get current resume data for AI suggestions
-  const getCurrentResumeData = useCallback(() => methods.getValues(), [methods]);
-
   const saveResume = useCallback(async (data: ResumeFormData) => {
-    // Don't save demo resumes - check synchronously
     if (resumeId === 'test-resume-demo') {
       console.log('ℹ️ Demo resume - changes not saved');
       return;
@@ -101,7 +99,6 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
 
     setIsSaving(true);
     try {
-      // Save to backend first (primary storage)
       const response = await fetch(`/api/resumes/${resumeId}`, {
         method: 'PUT',
         headers: { 
@@ -116,13 +113,10 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
         console.warn('⚠️ Backend save failed, using localStorage fallback');
       }
 
-      // Always save to localStorage as backup/offline support
       localStorage.setItem(`resume-draft-${resumeId}`, JSON.stringify({
         data,
         savedAt: new Date().toISOString(),
       }));
-
-      setLastSaved(new Date());
     } catch (error) {
       console.error('Failed to save resume:', error);
     } finally {
@@ -133,11 +127,7 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   // Load resume data on mount
   useEffect(() => {
     const loadResume = async () => {
-      // Check if this is a demo resume
-      const isDemo = resumeId === 'test-resume-demo';
-      setIsDemoResume(isDemo);
 
-      // 1. If initialData is provided, use it.
       if (initialData) {
         methods.reset({
           personalInfo: initialData.resumeData.personalInfo,
@@ -146,13 +136,15 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
           experiences: initialData.resumeData.experiences,
           projects: initialData.resumeData.projects,
           skills: initialData.resumeData.skills,
+          certifications: initialData.resumeData.certifications,
+          awards: initialData.resumeData.awards,
+          volunteerExperience: initialData.resumeData.volunteerExperience,
+          languages: initialData.resumeData.languages,
         });
-        setLastSaved(new Date(initialData.updatedAt || initialData.createdAt));
         console.log('✅ Resume loaded from initialData');
         return;
       }
 
-      // 2. If no initialData, try to fetch from backend
       try {
         const response = await fetch(`/api/resumes/${resumeId}`, {
           method: 'GET',
@@ -170,23 +162,24 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
             experiences: resumeData.resumeData?.experiences || resumeData.experiences,
             projects: resumeData.resumeData?.projects || resumeData.projects,
             skills: resumeData.resumeData?.skills || resumeData.skills,
+            certifications: resumeData.resumeData?.certifications || resumeData.certifications,
+            awards: resumeData.resumeData?.awards || resumeData.awards,
+            volunteerExperience: resumeData.resumeData?.volunteerExperience || resumeData.volunteerExperience,
+            languages: resumeData.resumeData?.languages || resumeData.languages,
           });
-          setLastSaved(new Date(resumeData.updatedAt || resumeData.createdAt));
           console.log('✅ Resume loaded from backend');
-          return; // Successfully loaded from backend
+          return;
         }
       } catch (error) {
         console.warn('⚠️ Failed to load from backend:', error);
       }
 
-      // 3. If backend fails or is skipped, try localStorage as a last resort
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem(`resume-draft-${resumeId}`);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            methods.reset(parsed.data); // Load data into the form
-            setLastSaved(new Date(parsed.savedAt)); // NOW it's safe to set state
+            methods.reset(parsed.data);
             console.log('✅ Resume loaded from localStorage fallback');
           } catch (e) {
             console.error('Failed to parse saved resume:', e);
@@ -196,11 +189,10 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
     };
 
     loadResume();
-  }, [resumeId, initialData, methods]); // Add `methods` to the dependency array
+  }, [resumeId, initialData, methods]);
 
   useEffect(() => {
     if (debouncedData && resumeId !== 'test-resume-demo') {
-      // Only save if the data has actually changed
       const currentDataString = JSON.stringify(debouncedData);
       if (lastSavedDataRef.current !== currentDataString) {
         lastSavedDataRef.current = currentDataString;
@@ -212,10 +204,8 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      // Get current form data
       const currentData = methods.getValues();
       
-      // Transform form data to ResumeData format for PDF generation
       const resumeData: ResumeData = {
         personalInfo: currentData.personalInfo,
         professionalSummary: currentData.professionalSummary || '',
@@ -234,36 +224,31 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
           bulletPoints: project.bulletPoints || [],
         })),
         skills: currentData.skills || [],
+        certifications: currentData.certifications || [],
+        awards: currentData.awards || [],
+        volunteerExperience: (currentData.volunteerExperience || []).map(vol => ({
+          ...vol,
+          isCurrent: vol.isCurrent || false,
+          bulletPoints: vol.bulletPoints || [],
+        })),
+        languages: currentData.languages || [],
       };
       
-      // Generate PDF blob
       const pdfDocument = <ResumePDFDocument data={resumeData} />;
       const blob = await pdf(pdfDocument).toBlob();
       
-      // Create filename from personal info or use default
       const fileName = currentData.personalInfo.fullName
         ? `${currentData.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`
         : 'Resume.pdf';
       
-      // Download the file
       saveAs(blob, fileName);
-      
       console.log('✅ PDF generated and downloaded successfully');
     } catch (error) {
       console.error('❌ Failed to generate PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      // alert('Failed to generate PDF. Please try again.'); // Avoid alert
     } finally {
       setIsGeneratingPDF(false);
     }
-  };
-
-  const handleApplySuggestion = (suggestion: { section: string; suggested: string }) => {
-    // This is a simplified implementation
-    // In a full implementation, you would parse the suggestion and update the specific field
-    console.log('✅ Applying suggestion:', suggestion);
-    
-    // For now, just show an alert - you would implement the actual field update logic here
-    alert(`Suggestion applied! You may need to manually update the ${suggestion.section} section with: ${suggestion.suggested}`);
   };
 
   const onSubmit = async (data: ResumeFormData) => {
@@ -273,115 +258,194 @@ export function ResumeEditorClient({ resumeId, initialData, mode }: ResumeEditor
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
-      <div className="container mx-auto px-4">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-              {mode === 'create' ? 'Create Resume' : isDemoResume ? 'Demo Resume (Read-Only)' : 'Edit Resume'}
-            </h1>
-            <p className="text-slate-400 mt-2">
-              {isDemoResume ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-blue-400" />
-                  Demo resume - changes are not saved. Create a new resume to save your edits.
-                </span>
-              ) : isSaving ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
-                  Saving...
-                </span>
-              ) : lastSaved ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
-                  Last saved {lastSaved.toLocaleTimeString()}
-                </span>
-              ) : 'All changes are automatically saved'}
-            </p>
+    // Root container: Full screen, flex column, no overflow
+    <div className="h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col overflow-hidden text-slate-200">
+      
+      <FormProvider {...methods}>
+        {/* 2. Main content area: Flex row, takes remaining space, no overflow */}
+        <form id="resume-form" onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-1 overflow-hidden">
+          
+          {/* 3. Sidebar Navigation: 10% width */}
+          <div className="basis-[10%] border-r border-slate-700 bg-slate-900/50 flex-shrink-0 flex flex-col min-w-0">
+            <h3 className="text-lg font-semibold text-purple-300 mb-4 p-4 pb-0">Resume Sections</h3>
+            <nav className="flex-1 overflow-y-auto space-y-2 p-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('personal')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'personal'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <FileText className="h-4 w-4 inline mr-2" />
+                Personal Info
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('summary')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'summary'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Summary
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('experience')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'experience'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Experience
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('education')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'education'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Education
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('projects')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'projects'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Projects
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('skills')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'skills'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Skills
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('certifications')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'certifications'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Certifications
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('awards')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'awards'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Awards
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('volunteer')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'volunteer'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Volunteer
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('languages')}
+                className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  activeTab === 'languages'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Languages
+              </button>
+            </nav>
+            <div className="p-4 border-t border-slate-700 flex gap-2 flex-shrink-0">
+              <Button 
+                type="button" 
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPDF}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50 flex-1"
+              >
+                <Download className="h-3 w-3" />
+                {isGeneratingPDF ? '...' : 'PDF'}
+              </Button>
+              <Button 
+                type="submit" 
+                form="resume-form"
+                disabled={isSaving} 
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs px-2 py-1 rounded flex items-center gap-1 flex-1"
+              >
+                <Save className="h-3 w-3" />
+                {isSaving ? '...' : 'Save'}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setShowAISuggestions(!showAISuggestions)}
-              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {showAISuggestions ? 'Hide' : 'Show'} AI Suggestions
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
-            </Button>
+
+          {/* 4. Form Content: 30% width */}
+          <div className="basis-[30%] p-2 h-full min-w-0">
+            <div className="max-w-3xl mx-auto h-full flex flex-col">
+              {activeTab === 'personal' && <PersonalInfoSection />}
+              {activeTab === 'summary' && <ProfessionalSummarySection />}
+              {activeTab === 'experience' && <ExperienceSection />}
+              {activeTab === 'education' && <EducationSection />}
+              {activeTab === 'projects' && <ProjectsSection />}
+              {activeTab === 'skills' && <SkillsSection />}
+              {activeTab === 'certifications' && <CertificationsSection />}
+              {activeTab === 'awards' && <AwardsSection />}
+              {activeTab === 'volunteer' && <VolunteerExperienceSection />}
+              {activeTab === 'languages' && <LanguagesSection />}
+            </div>
           </div>
-        </div>
-        <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className={`grid gap-6 ${
-            showAISuggestions ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1 lg:grid-cols-2'
-          }`}>
-            <div className="space-y-6">
-              <Card className="bg-slate-900/50 border-purple-500/30 max-h-[calc(100vh-16rem)] overflow-y-auto">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="bg-transparent border-b border-slate-700 px-6 sticky top-0 z-10">
-                    <TabsTrigger value="personal" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300"><FileText className="h-4 w-4 mr-2" />Personal</TabsTrigger>
-                    <TabsTrigger value="summary" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Summary</TabsTrigger>
-                    <TabsTrigger value="experience" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Experience</TabsTrigger>
-                    <TabsTrigger value="education" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Education</TabsTrigger>
-                    <TabsTrigger value="projects" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Projects</TabsTrigger>
-                    <TabsTrigger value="skills" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">Skills</TabsTrigger>
-                  </TabsList>
-                  <div className="p-6">
-                    {activeTab === 'personal' && <PersonalInfoSection />}
-                    {activeTab === 'summary' && <ProfessionalSummarySection />}
-                    {activeTab === 'experience' && <ExperienceSection />}
-                    {activeTab === 'education' && <EducationSection />}
-                    {activeTab === 'projects' && <ProjectsSection />}
-                    {activeTab === 'skills' && <SkillsSection />}
-                  </div>
-                </Tabs>
-              </Card>
-              <div className="flex justify-end">
-                <Button 
-                  type="submit" 
-                  disabled={isSaving || isDemoResume} 
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isDemoResume ? 'Demo - Read Only' : isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
+
+          {/* 5. Right Panel: 60% width (Resume 40% + AI 20%) */}  
+          <div className="basis-[60%] border-l border-slate-700 bg-slate-900/30 flex-shrink-0 flex overflow-hidden min-w-0">
+            {/* Live Preview: 40% of total width (66.67% of right panel) */}
+            <div className="basis-[66.67%] border-r border-slate-700 flex flex-col overflow-hidden min-w-0">
+              <div className="flex-1 overflow-y-auto">
+                <ResumePreview />
               </div>
             </div>
-            <Card className="bg-slate-900/50 border-purple-500/30">
-              <div className="sticky">
-                <h3 className="text-lg font-semibold text-purple-300 mb-4 px-6">Live Preview</h3>
-                <div className="p-2 mx-6 rounded-lg border border-purple-500/30 overflow-y-auto overflow-x-hidden">
-                  <ResumePreview />
+            
+            {/* AI Agent Chat: 20% of total width (33.33% of right panel) */}
+            <div className="basis-[33.33%] bg-slate-900/50 flex flex-col overflow-hidden min-w-0">
+              <div className="p-4 border-b border-slate-700 flex-shrink-0">
+                <h3 className="text-lg font-semibold text-purple-300">AI Assistant</h3>
+                <p className="text-sm text-slate-400 mt-1">Coming soon...</p>
+              </div>
+              <div className="flex-1 flex items-center justify-center text-slate-500">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🤖</div>
+                  <p>AI Agent Chat</p>
+                  <p className="text-xs mt-2">Space reserved for future implementation</p>
                 </div>
               </div>
-            </Card>
-            {showAISuggestions && (
-              <div>
-                <div className="sticky top-8">
-                  <AISuggestionsPanel
-                    getResumeData={getCurrentResumeData}
-                    onApplySuggestion={handleApplySuggestion}
-                    className="max-h-[calc(100vh-8rem)] overflow-y-auto"
-                  />
-                </div>
-              </div>
-            )}
-          </form>
-        </FormProvider>
-      </div>
+            </div>
+          </div>
+
+        </form>
+      </FormProvider>
     </div>
   );
 }
-
-
-
-
